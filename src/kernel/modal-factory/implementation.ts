@@ -1,5 +1,6 @@
-import type { AnyModalCreator, Builder, GetPayload, Middleware, ModalCreator, ModalCreatorWithBuilder, ModalStore, PayloadBrand, PayloadUnbrand, WithApplyPayload } from "./interface"
+import type { AnyModalCreator, Builder, GetPayload, Middleware, ModalCreator, ModalCreatorWithBuilder, ModalStore, NextFuntionWithMethods, PayloadBrand, PayloadUnbrand, WithApplyPayload } from "./interface"
 import { BaseStore } from "../store/implementation"
+import type { RecordsMerge } from "../../shared/types"
 
 export class Modal<
   Type extends string = string, Payload extends PayloadBrand<unknown> = PayloadBrand<unknown>
@@ -26,11 +27,15 @@ export class Modal<
     >
   }
 
-  open(payload: PayloadBrand<Payload>) { }
+  public extendParams<PayloadV2>() {
+    return this as unknown as ModalCreator<Type, PayloadBrand<RecordsMerge<PayloadBrand<Payload>, PayloadV2>>, {}>
+  }
 
-  close() { }
+  public open(payload: PayloadBrand<Payload>) { }
 
-  payload(payload: PayloadUnbrand<Payload>): Payload {
+  public close() { }
+
+  public payload(payload: PayloadUnbrand<Payload>): Payload {
     return {
       ...payload,
       __internal_name: "payload",
@@ -41,8 +46,18 @@ export class Modal<
 export namespace Modal {
   export type payloadWithBrand<Context extends ModalCreatorWithBuilder<AnyModalCreator>> = GetPayload<Context>
 
-  export type payload<Context extends ModalCreatorWithBuilder<AnyModalCreator>> = (
-    PayloadUnbrand<GetPayload<Context>>
+  export type payload<Context extends
+    | ModalCreatorWithBuilder<AnyModalCreator>
+    | ((...args: any[]) => ModalCreatorWithBuilder<AnyModalCreator>)
+    | NextFuntionWithMethods<ModalCreatorWithBuilder<AnyModalCreator>, any>
+  > = (
+    Context extends ((...args: any[]) => ModalCreatorWithBuilder<AnyModalCreator>)
+      ? PayloadUnbrand<GetPayload<ReturnType<Context>>>
+      : Context extends 
+        | ModalCreatorWithBuilder<AnyModalCreator> 
+        | NextFuntionWithMethods<ModalCreatorWithBuilder<AnyModalCreator>, any>
+          ? PayloadUnbrand<GetPayload<Context>>
+          : never 
   )
 
   export type middleware

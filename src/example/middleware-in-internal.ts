@@ -4,7 +4,10 @@
  * функции прямо в builder.use с сохранением строгой типизации
  */
 
-const kit = createModal("test")
+import { Modal } from "../kernel/modal-factory/implementation"
+import type { GetPayload, PayloadUnbrand } from "../kernel/modal-factory/interface"
+
+const kit = new Modal("test")
   .withParams<{ terminator: "zxc" }>()
 
 type T1 = Modal.payloadWithBrand<typeof kit>
@@ -24,7 +27,7 @@ const kitWithMiddleware = modals.kit
       return payload.terminator
     }
 
-    const handleTestWithoutExtendablePayload = (payload: Unbrand<GetPayload<typeof context>>) => {
+    const handleTestWithoutExtendablePayload = (payload: PayloadUnbrand<GetPayload<typeof context>>) => {
       return payload.terminator
     }
 
