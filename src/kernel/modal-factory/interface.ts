@@ -46,17 +46,16 @@ export type ModalCreator<
   ) => void
 
   withParams: <PayloadV2>() => ModalCreator<Type, PayloadBrand<PayloadV2>, Store>
-  extendParams: <PayloadV2>() => ModalCreator<Type, PayloadBrand<RecordsMerge<Payload, PayloadV2>>, Store>
 
   payload: (payload: PayloadUnbrand<Payload>) => Payload
 }
+
+export type AnyModalCreator = ModalCreator<any, PayloadBrand<any>, any>
 
 export type ModalCreatorWithBuilder<Context extends AnyModalCreator> =
   Context extends ModalCreator<infer Type, infer Payload>
     ? ModalCreator<Type, Payload> & Context & { builder: Builder<Context> }
     : never
-
-export type AnyModalCreator = ModalCreator<any, PayloadBrand<any>, any>
 
 export type AnyModalCreatorWithBuilder = ModalCreatorWithBuilder<AnyModalCreator>
 

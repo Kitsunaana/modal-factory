@@ -28,7 +28,13 @@ export class Modal<
   }
 
   public extendParams<PayloadV2>() {
-    return this as unknown as ModalCreator<Type, PayloadBrand<RecordsMerge<PayloadBrand<Payload>, PayloadV2>>, {}>
+    // return this as unknown as typeof this extends ModalCreatorWithBuilder<infer InferedContext> 
+    //   ? InferedContext extends ModalCreator<infer Type, infer Payload extends PayloadBrand<{}>, infer Store>
+    //     ? ModalCreatorWithBuilder<ModalCreator<Type, Payload, Store>>
+    //     : never
+    //   : never
+
+    return { a: 1 }
   }
 
   public open(payload: PayloadBrand<Payload>) { }
@@ -43,28 +49,34 @@ export class Modal<
   }
 }
 
-export namespace Modal {
-  export type payloadWithBrand<Context extends AnyModalCreatorWithBuilder> = GetPayload<Context>
+type FnReturnAnyModalCreatorWithBuilder = (...args: any[]) => AnyModalCreatorWithBuilder
 
+export namespace Modal {
   export type payload<Context extends
     | AnyModalCreatorWithBuilder
-    | ((...args: any[]) => AnyModalCreatorWithBuilder)
+    | FnReturnAnyModalCreatorWithBuilder
     | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
   > = (
-    Context extends ((...args: any[]) => AnyModalCreatorWithBuilder)
+      Context extends FnReturnAnyModalCreatorWithBuilder
       ? PayloadUnbrand<GetPayload<ReturnType<Context>>>
-      : Context extends 
-        | AnyModalCreatorWithBuilder
-        | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
-          ? PayloadUnbrand<GetPayload<Context>>
-          : never 
-  )
+      : Context extends
+      | AnyModalCreatorWithBuilder
+      | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
+      ? PayloadUnbrand<GetPayload<Context>>
+      : never
+    )
+
+  export type payloadWithBrand<Context extends
+    | AnyModalCreatorWithBuilder
+    | FnReturnAnyModalCreatorWithBuilder
+    | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
+  > = PayloadBrand<payload<Context>>
 
   export type middleware
     <
       Context extends
       | AnyModalCreatorWithBuilder
-      | ((...args: any[]) => AnyModalCreatorWithBuilder),
+      | FnReturnAnyModalCreatorWithBuilder,
       ExtendContext = {},
       ExtendPayload = {},
     > = Middleware<Context, ExtendContext, ExtendPayload>

@@ -1,5 +1,6 @@
 import { Modal } from "../kernel/modal-factory/implementation"
-import type { AnotherModalCreator, AnyModalCreator, ModalCreatorWithBuilder } from "../kernel/modal-factory/interface"
+import type { AnotherModalCreator, AnyModalCreator, ModalCreator, ModalCreatorWithBuilder, PayloadBrand, WithApplyPayload } from "../kernel/modal-factory/interface"
+import type { AnyRecord, RecordsMerge } from "../shared/types"
 
 
 // ------------------------------ EXAMPLE ------------------------------------
@@ -42,9 +43,22 @@ modTestV4.payload({ zxc: "1" }) // Базовый пустой Payload расш�
 
 const director = {
   applyAllRules: <Context extends ModalCreatorWithBuilder<AnyModalCreator>>(modal: Context) => {
-    return modal
+    const result = modal
       .builder.use(testV4)
       .builder.use(testV5)
+
+    return result as unknown as typeof result & {
+      extendParam: <PayloadV2 extends AnyRecord>() => typeof result extends ModalCreatorWithBuilder<infer InferedContext>
+        ? InferedContext extends ModalCreator<any, infer Payload extends PayloadBrand<unknown>>
+          ? ModalCreatorWithBuilder<
+            RecordsMerge<
+              Omit<InferedContext, "builder">,
+              ModalCreator<InferedContext["type"], Payload & PayloadV2> & WithApplyPayload<Payload & PayloadV2>
+            >
+          >
+          : never
+        : never
+    }
   }
 }
 
@@ -55,13 +69,15 @@ modTestV5.anotherCallback({ zxc: "" })
 
 // Через director можно расширеть контекст модального окна добавив новые поля или метод
 // расширять можно также и payload, то есть данные передаваемые при вызове .open 
-const newTestModal = director.applyAllRules(new Modal("new-modal"))
+const newTestModal = director.applyAllRules(new Modal("new-modal")).extendParam<{ newValue: string }>()
 
+newTestModal.open({  })
 newTestModal.anotherCallback({ zxc: "" })
 
 // Не требуется приведение типов, в payload появились поля из первого и второго middleware
 newTestModal.open((ctx) => ctx.payload({
   zxc: "",
+  newValue: "1",
   data: {
     a: {
       b: "terminator"

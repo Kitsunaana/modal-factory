@@ -56,7 +56,7 @@ const kitWithMiddleware = modals.kit
       terminator: "zxc"
     })
 
-    const handleHandleTest = (payload: GetPayload<typeof modifiedNext>) => {
+    const handleHandleTest = (payload: Modal.payloadWithBrand<typeof modifiedNext>) => {
       payload.Dan
 
       context.handleTestWithoutExtendablePayload({
