@@ -33,7 +33,7 @@ export type ModalStore<Payload extends unknown, Store extends unknown = {}> = St
 export type ModalCreator<
   Type extends string = string,
   Payload extends PayloadBrand<unknown> = PayloadBrand<unknown>,
-  Store extends unknown = {}
+  Store extends unknown = {},
 > = BaseStore<ModalStore<Payload, Store>> & {
   type: Type
 
@@ -58,6 +58,8 @@ export type ModalCreatorWithBuilder<Context extends AnyModalCreator> =
 
 export type AnyModalCreator = ModalCreator<any, PayloadBrand<any>, any>
 
+export type AnyModalCreatorWithBuilder = ModalCreatorWithBuilder<AnyModalCreator>
+
 export type AnotherModalCreator = ModalCreatorWithBuilder<
   ModalCreator<string, PayloadBrand<{}>, {}>
 >
@@ -65,10 +67,10 @@ export type AnotherModalCreator = ModalCreatorWithBuilder<
 export type ExtendModalCreator<ExtendableContext extends AnyModalCreator, ExtendPayload = {}> = {
   [Key in keyof ExtendableContext]: (
     ExtendableContext[Key] extends AnyArrowFn
-    ? Parameters<ExtendableContext[Key]>[0] extends PayloadBrand<infer OldPayload>
-      ? (payload: PayloadBrand<OldPayload & ExtendPayload>) => ReturnType<ExtendableContext[Key]>
+      ? Parameters<ExtendableContext[Key]>[0] extends PayloadBrand<infer OldPayload>
+        ? (payload: PayloadBrand<OldPayload & ExtendPayload>) => ReturnType<ExtendableContext[Key]>
+        : ExtendableContext[Key]
       : ExtendableContext[Key]
-    : ExtendableContext[Key]
   )
 }
 
@@ -76,7 +78,7 @@ export type WithApplyPayload<Payload extends PayloadBrand<AnyRecord>> = {
   payload: (payload: ExcludeProperty<Payload, { __internal_name: "payload" }>) => Payload
 }
 
-export type NextFuntionWithMethods<ContextParam extends ModalCreatorWithBuilder<AnyModalCreator>, ExtendPayload = {}> = {
+export type NextFuntionWithMethods<ContextParam extends AnyModalCreatorWithBuilder, ExtendPayload = {}> = {
   <
     Context extends AnyRecord = {},
     Payload extends PayloadBrand<AnyRecord> = PayloadBrand<{}>,
@@ -150,19 +152,17 @@ export type Builder<ContextParam extends AnyModalCreator> = {
   ) => ConcatedContext
 }
 
-export type AnyModalCreatorWithBuilder = AnyModalCreator & { builder: Builder<AnyModalCreator> }
-
 export type GetMiddlewareUse<ContextWithBuilder extends AnyModalCreatorWithBuilder> = (
   GetParameters<ContextWithBuilder["builder"]["use"]>
 )
 
 export type Middleware<
   Context extends 
-    | ModalCreatorWithBuilder<AnyModalCreator>
-    | ((...args: any[]) => ModalCreatorWithBuilder<AnyModalCreator>),
+    | AnyModalCreatorWithBuilder
+    | ((...args: any[]) => AnyModalCreatorWithBuilder),
   ExtendContext = {},
   ExtendPayload = {},
-> = Context extends ((...args: any[]) => ModalCreatorWithBuilder<AnyModalCreator>)
+> = Context extends ((...args: any[]) => AnyModalCreatorWithBuilder)
   ? Middleware<ReturnType<Context>, ExtendContext, ExtendPayload>
   : Context extends ModalCreatorWithBuilder<infer InferedContext>
     ? (params: GetParameters<GetMiddlewareUse<Context>>) => InferedContext extends ModalCreator<any, infer Payload, infer Store>

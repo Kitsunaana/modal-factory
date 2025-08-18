@@ -1,6 +1,6 @@
-import type { AnyModalCreator, Builder, GetPayload, Middleware, ModalCreator, ModalCreatorWithBuilder, ModalStore, NextFuntionWithMethods, PayloadBrand, PayloadUnbrand, WithApplyPayload } from "./interface"
-import { BaseStore } from "../store/implementation"
 import type { RecordsMerge } from "../../shared/types"
+import { BaseStore } from "../store/implementation"
+import type { AnyModalCreatorWithBuilder, Builder, GetPayload, Middleware, ModalCreator, ModalCreatorWithBuilder, ModalStore, NextFuntionWithMethods, PayloadBrand, PayloadUnbrand, WithApplyPayload } from "./interface"
 
 export class Modal<
   Type extends string = string, Payload extends PayloadBrand<unknown> = PayloadBrand<unknown>
@@ -44,18 +44,18 @@ export class Modal<
 }
 
 export namespace Modal {
-  export type payloadWithBrand<Context extends ModalCreatorWithBuilder<AnyModalCreator>> = GetPayload<Context>
+  export type payloadWithBrand<Context extends AnyModalCreatorWithBuilder> = GetPayload<Context>
 
   export type payload<Context extends
-    | ModalCreatorWithBuilder<AnyModalCreator>
-    | ((...args: any[]) => ModalCreatorWithBuilder<AnyModalCreator>)
-    | NextFuntionWithMethods<ModalCreatorWithBuilder<AnyModalCreator>, any>
+    | AnyModalCreatorWithBuilder
+    | ((...args: any[]) => AnyModalCreatorWithBuilder)
+    | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
   > = (
-    Context extends ((...args: any[]) => ModalCreatorWithBuilder<AnyModalCreator>)
+    Context extends ((...args: any[]) => AnyModalCreatorWithBuilder)
       ? PayloadUnbrand<GetPayload<ReturnType<Context>>>
       : Context extends 
-        | ModalCreatorWithBuilder<AnyModalCreator> 
-        | NextFuntionWithMethods<ModalCreatorWithBuilder<AnyModalCreator>, any>
+        | AnyModalCreatorWithBuilder
+        | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
           ? PayloadUnbrand<GetPayload<Context>>
           : never 
   )
@@ -63,8 +63,8 @@ export namespace Modal {
   export type middleware
     <
       Context extends
-      | ModalCreatorWithBuilder<AnyModalCreator>
-      | ((...args: any[]) => ModalCreatorWithBuilder<AnyModalCreator>),
+      | AnyModalCreatorWithBuilder
+      | ((...args: any[]) => AnyModalCreatorWithBuilder),
       ExtendContext = {},
       ExtendPayload = {},
     > = Middleware<Context, ExtendContext, ExtendPayload>

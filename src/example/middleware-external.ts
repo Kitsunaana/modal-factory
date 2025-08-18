@@ -43,7 +43,7 @@ modTestV4.payload({ zxc: "1" }) // Базовый пустой Payload расш�
 const director = {
   applyAllRules: <Context extends ModalCreatorWithBuilder<AnyModalCreator>>(modal: Context) => {
     return modal
-      // .builder.use(testV4)
+      .builder.use(testV4)
       .builder.use(testV5)
   }
 }
@@ -61,7 +61,7 @@ newTestModal.anotherCallback({ zxc: "" })
 
 // Не требуется приведение типов, в payload появились поля из первого и второго middleware
 newTestModal.open((ctx) => ctx.payload({
-  zxc: "s",
+  zxc: "",
   data: {
     a: {
       b: "terminator"
