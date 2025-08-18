@@ -1,4 +1,3 @@
-import type { RecordsMerge } from "../../shared/types"
 import { BaseStore } from "../store/implementation"
 import type { AnyModalCreatorWithBuilder, Builder, GetPayload, Middleware, ModalCreator, ModalCreatorWithBuilder, ModalStore, NextFuntionWithMethods, PayloadBrand, PayloadUnbrand, WithApplyPayload } from "./interface"
 
@@ -27,16 +26,6 @@ export class Modal<
     >
   }
 
-  public extendParams<PayloadV2>() {
-    // return this as unknown as typeof this extends ModalCreatorWithBuilder<infer InferedContext> 
-    //   ? InferedContext extends ModalCreator<infer Type, infer Payload extends PayloadBrand<{}>, infer Store>
-    //     ? ModalCreatorWithBuilder<ModalCreator<Type, Payload, Store>>
-    //     : never
-    //   : never
-
-    return { a: 1 }
-  }
-
   public open(payload: PayloadBrand<Payload>) { }
 
   public close() { }
@@ -58,12 +47,12 @@ export namespace Modal {
     | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
   > = (
       Context extends FnReturnAnyModalCreatorWithBuilder
-      ? PayloadUnbrand<GetPayload<ReturnType<Context>>>
-      : Context extends
-      | AnyModalCreatorWithBuilder
-      | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
-      ? PayloadUnbrand<GetPayload<Context>>
-      : never
+        ? PayloadUnbrand<GetPayload<ReturnType<Context>>>
+          : Context extends
+            | AnyModalCreatorWithBuilder
+            | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
+          ? PayloadUnbrand<GetPayload<Context>>
+        : never
     )
 
   export type payloadWithBrand<Context extends

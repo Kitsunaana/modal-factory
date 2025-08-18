@@ -1,3 +1,4 @@
+import { createEvent, EventEmitter, type EventCreator, type EventType, type Listener } from "../kernel/event-bus/types"
 import { Modal } from "../kernel/modal-factory/implementation"
 import type { AnotherModalCreator, AnyModalCreator, ModalCreator, ModalCreatorWithBuilder, PayloadBrand, WithApplyPayload } from "../kernel/modal-factory/interface"
 import type { AnyRecord, RecordsMerge } from "../shared/types"
@@ -41,11 +42,37 @@ const modTestV4 = testV4({} as any)
 modTestV4.abc // Появилось новое поле "abc"
 modTestV4.payload({ zxc: "1" }) // Базовый пустой Payload расширен и требует новое свойство
 
+const sharedEventBus = new EventEmitter()
+
 const director = {
   applyAllRules: <Context extends ModalCreatorWithBuilder<AnyModalCreator>>(modal: Context) => {
     const result = modal
       .builder.use(testV4)
       .builder.use(testV5)
+      .builder.use(({ context, next }) => {
+        const eventName = `modal.open.${context.type}` as const
+
+        const openModalEvent = createEvent(eventName)
+          .withParams<Modal.payload<typeof context>>()
+
+        const handleOpen = (payload: Modal.payloadWithBrand<typeof context>) => {
+          sharedEventBus.emit(openModalEvent(payload))
+          context.open(payload)
+        }
+
+        const subscribeHandleOpen = <Event extends Listener<typeof eventName, Modal.payload<typeof context>>>(callback: Event) => {
+          sharedEventBus.on(openModalEvent, callback)
+        }
+
+        return next({ 
+          ctx: {
+            openModalEvent,
+
+            handleOpen,
+            subscribeHandleOpen,
+          }
+        })
+      })
 
     return result as unknown as typeof result & {
       extendParam: <PayloadV2 extends AnyRecord>() => typeof result extends ModalCreatorWithBuilder<infer InferedContext>
@@ -71,7 +98,11 @@ modTestV5.anotherCallback({ zxc: "" })
 // расширять можно также и payload, то есть данные передаваемые при вызове .open 
 const newTestModal = director.applyAllRules(new Modal("new-modal")).extendParam<{ newValue: string }>()
 
-newTestModal.open({  })
+newTestModal.subscribeHandleOpen(({ payload }) => {
+  payload.data.a.b === "terminator"
+})
+
+newTestModal.handleOpen({  })
 newTestModal.anotherCallback({ zxc: "" })
 
 // Не требуется приведение типов, в payload появились поля из первого и второго middleware
