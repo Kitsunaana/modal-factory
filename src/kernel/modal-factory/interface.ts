@@ -1,4 +1,4 @@
-import type { 
+import type {
   Brand,
   AnyRecord,
   AnyArrowFn,
@@ -34,28 +34,30 @@ export type ModalCreator<
   Type extends string = string,
   Payload extends PayloadBrand<unknown> = PayloadBrand<unknown>,
   Store extends unknown = {},
-> = BaseStore<ModalStore<Payload, Store>> & {
+
+  ExtendContext = {}
+> = BaseStore<ModalStore<Payload, Store>> & ExtendContext & {
   type: Type
 
   close: () => void
   open: (
     payload:
       | Payload
-      | ((context: ModalCreator<Type, Payload, Store> & BaseStore<ModalStore<Payload, Store>>) => Payload)
+      | ((context: ModalCreator<Type, Payload, Store, ExtendContext> & BaseStore<ModalStore<Payload, Store>>) => Payload)
       | ExcludeProperty<Payload, { __internal_name: "payload" }>
   ) => void
 
-  withParams: <PayloadV2>() => ModalCreator<Type, PayloadBrand<PayloadV2>, Store>
+  withParams: <PayloadV2>() => ModalCreator<Type, PayloadBrand<PayloadV2>, Store, ExtendContext>
 
   payload: (payload: PayloadUnbrand<Payload>) => Payload
 }
 
-export type AnyModalCreator = ModalCreator<any, PayloadBrand<any>, any>
+export type AnyModalCreator = ModalCreator<any, PayloadBrand<any>, any, AnyRecord>
 
 export type ModalCreatorWithBuilder<Context extends AnyModalCreator> =
   Context extends ModalCreator<infer Type, infer Payload>
-    ? ModalCreator<Type, Payload> & Context & { builder: Builder<Context> }
-    : never
+  ? ModalCreator<Type, Payload> & Context & { builder: Builder<Context> }
+  : never
 
 export type AnyModalCreatorWithBuilder = ModalCreatorWithBuilder<AnyModalCreator>
 
@@ -66,10 +68,10 @@ export type AnotherModalCreator = ModalCreatorWithBuilder<
 export type ExtendModalCreator<ExtendableContext extends AnyModalCreator, ExtendPayload = {}> = {
   [Key in keyof ExtendableContext]: (
     ExtendableContext[Key] extends AnyArrowFn
-      ? Parameters<ExtendableContext[Key]>[0] extends PayloadBrand<infer OldPayload>
-        ? (payload: PayloadBrand<OldPayload & ExtendPayload>) => ReturnType<ExtendableContext[Key]>
-        : ExtendableContext[Key]
-      : ExtendableContext[Key]
+    ? Parameters<ExtendableContext[Key]>[0] extends PayloadBrand<infer OldPayload>
+    ? (payload: PayloadBrand<OldPayload & ExtendPayload>) => ReturnType<ExtendableContext[Key]>
+    : ExtendableContext[Key]
+    : ExtendableContext[Key]
   )
 }
 
@@ -86,44 +88,44 @@ export type NextFuntionWithMethods<ContextParam extends AnyModalCreatorWithBuild
     ctx: Context,
   }): (
       ContextParam extends ModalCreatorWithBuilder<infer InferedContext>
-        ? InferedContext extends ModalCreator<infer Type, infer OldPayload, infer OldStore>
-          ? ExtendModalCreator<
-            ModalCreatorWithBuilder<
-              RecordsMerge<
-                RecordsMerge<InferedContext, Context>,
-                ModalCreator<
-                  Type,
-                  RecordsMerge<OldPayload, Payload & ExtendPayload>,
-                  RecordsMerge<OldStore, Store>
-                > & WithApplyPayload<RecordsMerge<OldPayload, Payload & ExtendPayload>>
-              >
-            >,
-            ExtendPayload
-          > & BaseStore<ModalStore<RecordsMerge<OldPayload, Payload & ExtendPayload>, RecordsMerge<OldStore, Store>>>
-          : never
-        : never
+      ? InferedContext extends ModalCreator<infer Type, infer OldPayload, infer OldStore>
+      ? ExtendModalCreator<
+        ModalCreatorWithBuilder<
+          RecordsMerge<
+            RecordsMerge<InferedContext, Context>,
+            ModalCreator<
+              Type,
+              RecordsMerge<OldPayload, Payload & ExtendPayload>,
+              RecordsMerge<OldStore, Store>
+            > & WithApplyPayload<RecordsMerge<OldPayload, Payload & ExtendPayload>>
+          >
+        >,
+        ExtendPayload
+      > & BaseStore<ModalStore<RecordsMerge<OldPayload, Payload & ExtendPayload>, RecordsMerge<OldStore, Store>>>
+      : never
+      : never
     )
 
   extendPayload: <Payload2 extends AnyRecord>() => (
     ContextParam extends ModalCreatorWithBuilder<infer InferedContext>
-      ? InferedContext extends ModalCreator<any, infer Payload extends PayloadBrand<unknown>, infer Store>
-        ? (
-          NextFuntionWithMethods<
-            ModalCreatorWithBuilder<
-              RecordsMerge<
-                InferedContext,
-                ModalCreator<
-                  InferedContext["type"],
-                  PayloadBrand<Payload & Payload2>,
-                  Store
-                > & WithApplyPayload<Payload & Payload2>
-              >
-            >,
-            Payload2
+    ? InferedContext extends ModalCreator<any, infer Payload extends PayloadBrand<unknown>, infer Store>
+    ? (
+      NextFuntionWithMethods<
+        ModalCreatorWithBuilder<
+          RecordsMerge<
+            InferedContext,
+            ModalCreator<
+              InferedContext["type"],
+              PayloadBrand<Payload & Payload2>,
+              Store
+            > & WithApplyPayload<Payload & Payload2>
           >
-        )
-        : never
-      : never
+        >,
+        Payload2
+      >
+    )
+    : never
+    : never
   )
 
   getContext: () => ContextParam
@@ -134,12 +136,12 @@ export type GetPayload<Context extends
   | NextFuntionWithMethods<ModalCreatorWithBuilder<AnyModalCreator>, any>
 > = (
     Context extends ModalCreatorWithBuilder<infer InferedContext>
-      ? InferedContext extends ModalCreator<any, infer Payload>
-        ? Payload
-        : never
-      : Context extends NextFuntionWithMethods<ModalCreatorWithBuilder<AnyModalCreator>, any>
-        ? GetPayload<ReturnType<Context["getContext"]>>
-        : never
+    ? InferedContext extends ModalCreator<any, infer Payload>
+    ? Payload
+    : never
+    : Context extends NextFuntionWithMethods<ModalCreatorWithBuilder<AnyModalCreator>, any>
+    ? GetPayload<ReturnType<Context["getContext"]>>
+    : never
   )
 
 export type Builder<ContextParam extends AnyModalCreator> = {
@@ -155,25 +157,37 @@ export type GetMiddlewareUse<ContextWithBuilder extends AnyModalCreatorWithBuild
   GetParameters<ContextWithBuilder["builder"]["use"]>
 )
 
+export type ComputeBaseModalCreator<
+  Context extends AnyModalCreator, 
+  ExtendContext,
+  Payload, 
+  ExtendPayload, 
+  Store
+> = ModalCreatorWithBuilder<
+  RecordsMerge<
+    RecordsMerge<Omit<Context, "builder">, ExtendContext>,
+    ModalCreator<
+      Context["type"],
+      PayloadBrand<Payload & ExtendPayload>,
+      Store
+    > & WithApplyPayload<PayloadBrand<Payload & ExtendPayload>>
+  >
+>
+
 export type Middleware<
-  Context extends 
-    | AnyModalCreatorWithBuilder
-    | ((...args: any[]) => AnyModalCreatorWithBuilder),
+  Context extends
+  | AnyModalCreatorWithBuilder
+  | ((...args: any[]) => AnyModalCreatorWithBuilder),
   ExtendContext = {},
   ExtendPayload = {},
-> = Context extends ((...args: any[]) => AnyModalCreatorWithBuilder)
-  ? Middleware<ReturnType<Context>, ExtendContext, ExtendPayload>
+> = [Context] extends [((arg: any) => AnyModalCreatorWithBuilder)]
+  ? ReturnType<Context> extends ModalCreatorWithBuilder<infer InferedContext extends AnyModalCreatorWithBuilder>
+    ? (params: GetParameters<GetMiddlewareUse<InferedContext>>) => InferedContext extends ModalCreator<any, infer Payload, infer Store>
+      ? ComputeBaseModalCreator<InferedContext, ExtendContext, Payload, ExtendPayload, Store>
+      : never
+    : never
   : Context extends ModalCreatorWithBuilder<infer InferedContext>
     ? (params: GetParameters<GetMiddlewareUse<Context>>) => InferedContext extends ModalCreator<any, infer Payload, infer Store>
-      ? ModalCreatorWithBuilder<
-          RecordsMerge<
-            RecordsMerge<Omit<InferedContext, "builder">, ExtendContext>,
-            ModalCreator<
-              InferedContext["type"],
-              PayloadBrand<Payload & ExtendPayload>,
-              Store
-            > & WithApplyPayload<Payload & ExtendPayload>
-          >
-        >
+      ? ComputeBaseModalCreator<InferedContext, ExtendContext, Payload, ExtendPayload, Store>
       : never
     : never
