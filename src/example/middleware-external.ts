@@ -110,24 +110,41 @@ type AnyMiddlewareV2 = AnyMiddleware
 
 type GetModalCreatorFromBuilder<Context extends AnyModalCreatorWithBuilder> = (
   Context extends ModalCreatorWithBuilder<infer InferedContext>
-  ? InferedContext
-  : never
+    ? InferedContext
+    : never
 )
 
-type MergeMiddlewares<MiddlewaresV2 extends readonly unknown[], Result = {}> = (
+type MergeMiddlewares<
+  MiddlewaresV2 extends readonly unknown[], 
+  Type extends string = string, 
+  ExtendContext extends AnyRecord = {}, 
+  ExtendPayload = {}
+> = (
   MiddlewaresV2 extends readonly [infer FirstMiddeware, ...infer Rest]
-  ? FirstMiddeware extends Middleware<infer ContextWithBuilder, infer ExtendContext, infer ExtendPayload>
-  ? MergeMiddlewares<
-    Rest,
-    RecordsMerge<
-      Result,
-      ReturnType<FirstMiddeware>
-    > & ExtendContext
-  >
-  : never
-  : Result extends AnyModalCreatorWithBuilder
-    ? ExtendModalCreator<Result, { b: 2 }>
-    : never
+    ? FirstMiddeware extends Middleware<any, any, any>
+      ? ReturnType<FirstMiddeware> extends ModalCreatorWithBuilder<infer InferedContext>
+        ? InferedContext extends ModalCreator<any, infer InferedPayload, any>
+          ? MergeMiddlewares<
+              Rest,
+              InferedContext["type"],
+              ExtendContext & Omit<
+                ReturnType<FirstMiddeware>, 
+                keyof ModalCreatorWithBuilder<
+                  ModalCreator<string, PayloadBrand<unknown>, {}>
+                >
+              >,
+              ExtendPayload & InferedPayload
+          >
+          : 4
+        : 3
+      : 2
+    : ModalCreatorWithBuilder<
+        ExtendContext & ModalCreator<
+          Type,
+          PayloadBrand<ExtendPayload>,
+          {}
+        > & WithApplyPayload<PayloadBrand<ExtendPayload>>
+      >
 )
 
 type AnyMiddlewareFn = (...args: any[]) => AnyModalCreatorWithBuilder
@@ -137,7 +154,9 @@ type IsAssignable<A, B> = A extends B ? 1 : 2
 const middlewares = [testV5, addEventMiddleware] as const
 
 type Z1 = MergeMiddlewares<typeof middlewares>
-const z1 = ({} as Z1).open({  })
+const z1 = ({} as Z1).event.subscribeHandleClose(({ payload }) => {
+  payload
+})
 
 type F1 = IsAssignable<typeof testV4, AnyMiddlewareFn> // 1
 type F2 = IsAssignable<ExtendContextV2, any> // 1
