@@ -1,7 +1,8 @@
+import type { debug } from "webpack"
 import { createEvent, EventEmitter, type EventCreator, type EventType, type Listener } from "../kernel/event-bus/types"
 import { Modal } from "../kernel/modal-factory/implementation"
-import type { AnotherModalCreator, AnyModalCreator, AnyModalCreatorWithBuilder, ExtendModalCreator, Middleware, ModalCreator, ModalCreatorWithBuilder, PayloadBrand, PayloadUnbrand, WithApplyPayload } from "../kernel/modal-factory/interface"
-import type { AnyRecord, GetParameters, RecordsMerge } from "../shared/types"
+import type { AnotherModalCreator, AnyModalCreator, AnyModalCreatorWithBuilder, DeepExtendRecord, ExtendModalCreator, Middleware, ModalCreator, ModalCreatorWithBuilder, PayloadBrand, PayloadUnbrand, WithApplyPayload } from "../kernel/modal-factory/interface"
+import type { AnyArrowFn, AnyRecord, Brand, GetParameters, RecordsMerge } from "../shared/types"
 
 
 // ------------------------------ EXAMPLE ------------------------------------
@@ -49,7 +50,7 @@ const addEventMiddleware = ({ context, next }: GetParameters<Modal.middleware<An
   const closeEventName = `modal.close.${context.type}` as const
 
   const openModalEvent = createEvent(openEventName)
-    .withParams<Modal.payload<typeof context>>()
+    .withParams<Modal.payloadWithBrand<typeof context>>()
 
   const closeModalEvent = createEvent(closeEventName)
 
@@ -64,7 +65,7 @@ const addEventMiddleware = ({ context, next }: GetParameters<Modal.middleware<An
   }
 
   const subscribeHandleOpen = <
-    Event extends Listener<typeof openEventName, Modal.payload<typeof context>>
+    Event extends Listener<typeof openEventName, Modal.payloadWithBrand<typeof context>>
   >(callback: Event) => {
     sharedEventBus.on(openModalEvent, callback)
   }
@@ -94,8 +95,10 @@ const addEventMiddleware = ({ context, next }: GetParameters<Modal.middleware<An
   return result
 }
 
-testV5({} as any).payload({})
-addEventMiddleware({} as any)
+testV5({} as any).payload({ data: { a: { b: "terminator" } } })
+addEventMiddleware({} as any).event.subscribeHandleOpen(({ payload }) => {
+  payload
+})
 
 type Ctx = { a: number }
 type CtxWrapper<C extends Ctx, Extend extends AnyRecord> = C & Extend
@@ -136,15 +139,33 @@ type MergeMiddlewares<
               ExtendPayload & InferedPayload
           >
           : 4
-        : 3
+        : ReturnType<FirstMiddeware> extends DeepExtendRecord<infer InferedContext>
+          ? InferedContext extends ModalCreator<any, infer InferedPayload, any>
+            ? MergeMiddlewares<
+              Rest,
+              InferedContext["type"],
+              ExtendContext & Omit<
+                ReturnType<FirstMiddeware>, 
+                keyof ModalCreatorWithBuilder<
+                  ModalCreator<string, PayloadBrand<unknown>, {}>
+                >
+              >,
+              ExtendPayload & InferedPayload
+            >
+            : 5
+          : 3
       : 2
-    : ModalCreatorWithBuilder<
-        ExtendContext & ModalCreator<
-          Type,
-          PayloadBrand<ExtendPayload>,
-          {}
-        > & WithApplyPayload<PayloadBrand<ExtendPayload>>
+    : ExtendModalCreator<
+        ModalCreatorWithBuilder<
+          ExtendContext & ModalCreator<
+            Type,
+            PayloadBrand<ExtendPayload>,
+            {}
+          > & WithApplyPayload<PayloadBrand<ExtendPayload>>
+        >,
+        PayloadBrand<ExtendPayload>
       >
+    // : 1
 )
 
 type AnyMiddlewareFn = (...args: any[]) => AnyModalCreatorWithBuilder
@@ -154,7 +175,10 @@ type IsAssignable<A, B> = A extends B ? 1 : 2
 const middlewares = [testV5, addEventMiddleware] as const
 
 type Z1 = MergeMiddlewares<typeof middlewares>
-const z1 = ({} as Z1).event.subscribeHandleClose(({ payload }) => {
+const z1 = ({} as Z1)
+
+z1.event.handleOpen(z1.payload({ data: { a: { b: "terminator" } } }))
+z1.event.subscribeHandleClose(({ payload }) => {
   payload
 })
 
@@ -268,3 +292,84 @@ newTestModal.open((ctx) => ctx.payload({
 }))
 
 newTestModal.close()
+
+type TestBrand<T> = Brand<T, "test">
+
+type L1 = {
+  callback: (arg: TestBrand<{ a: 1 }>) => void
+  callbackV2: (arg: { a: 1 }) => void
+
+  event: {
+    callbackV3: (arg: TestBrand<{ a: 1 }>) => void
+    callbackV4: (arg: { a: 1 }) => void
+
+    callbackV5: (internal_callback: (arg: TestBrand<{ qwe: 123 }>) => void) => void
+  }
+
+  array: [
+    (arg: TestBrand<{ c: 2 }>) => void,
+
+    [
+      (arg: TestBrand<{ z: 2 }>) => void,
+    ]
+  ]
+}
+
+type FilterOnlyRecord<Target extends Record<string, unknown>> = {
+  [
+    Key in keyof Target as Target[Key] extends 
+      | Record<string, unknown>
+      | Array<unknown> 
+      | readonly unknown[] 
+        ? Key 
+        : never
+  ]: Target[Key]
+}
+
+type L2<
+  ExtendableContext extends {}, 
+  ExtendPayload extends {}, 
+  DeepIncludeKeys extends keyof FilterOnlyRecord<ExtendableContext> | void = void
+> = {
+  [Key in keyof ExtendableContext]: (
+    ExtendableContext[Key] extends AnyArrowFn
+      ? Parameters<ExtendableContext[Key]>[0] extends TestBrand<infer OldPayload>
+        ? (payload: TestBrand<OldPayload & ExtendPayload>) => ReturnType<ExtendableContext[Key]>
+        : GetParameters<ExtendableContext[Key]> extends AnyArrowFn
+          ? GetParameters<GetParameters<ExtendableContext[Key]>> extends TestBrand<infer OldPayload>
+            ? (callback: (payload: TestBrand<OldPayload & ExtendPayload>) => ReturnType<GetParameters<ExtendableContext[Key]>>) => 
+                ReturnType<ExtendableContext[Key]>
+            : ExtendableContext[Key]
+          : ExtendableContext[Key]
+      : Key extends DeepIncludeKeys
+        ? ExtendableContext[Key] extends {}
+          ? L2<ExtendableContext[Key], ExtendPayload, void>
+          : ExtendableContext[Key]
+        : ExtendableContext[Key]
+  )
+}
+
+type L7 = FilterOnlyRecord<L1>
+
+type L3 = L2<L1, { b: 1 }, "array" | "event">
+
+type L4 = { abc: number }
+type L5 = L4 & { zxc: string, qwe: null }
+
+type L6 = keyof Omit<L5, keyof L4>
+
+const l6 = ({} as L6) === "qwe"
+
+const l3 = ({} as L3)
+
+l3.event.callbackV5(({  }) => {
+
+})
+
+l3.array[0]({  })
+l3.array[1][0]({  })
+
+l3.event.callbackV3({})
+l3.event.callbackV4({})
+l3.callbackV2({})
+l3.callback({})

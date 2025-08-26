@@ -65,21 +65,64 @@ export type AnotherModalCreator = ModalCreatorWithBuilder<
   ModalCreator<string, PayloadBrand<{}>, {}>
 >
 
-export type ExtendModalCreator<ExtendableContext extends AnyModalCreator, ExtendPayload = {}> = {
+type FilterOnlyRecord<Target extends Record<string, unknown>> = {
+  [
+    Key in keyof Target as Target[Key] extends 
+      | Record<string, unknown>
+      | Array<unknown> 
+      | readonly unknown[] 
+        ? Key 
+        : never
+  ]: Target[Key]
+}
+
+type DeepExtendRecord<
+  ExtendableContext extends {}, 
+  ExtendPayload extends {}, 
+  DeepIncludeKeys extends keyof FilterOnlyRecord<ExtendableContext> | void = void
+> = {
   [Key in keyof ExtendableContext]: (
     ExtendableContext[Key] extends AnyArrowFn
-    ? Parameters<ExtendableContext[Key]>[0] extends PayloadBrand<infer OldPayload>
-    ? (payload: PayloadBrand<OldPayload & ExtendPayload>) => ReturnType<ExtendableContext[Key]>
-    : ExtendableContext[Key]
-    : ExtendableContext[Key]
+      ? Parameters<ExtendableContext[Key]>[0] extends PayloadBrand<infer OldPayload>
+        ? (payload: PayloadBrand<OldPayload & ExtendPayload>) => ReturnType<ExtendableContext[Key]>
+        : GetParameters<ExtendableContext[Key]> extends AnyArrowFn
+          ? GetParameters<GetParameters<ExtendableContext[Key]>> extends PayloadBrand<infer OldPayload>
+            ? (callback: (payload: PayloadBrand<OldPayload & ExtendPayload>) => ReturnType<GetParameters<ExtendableContext[Key]>>) => 
+                ReturnType<ExtendableContext[Key]>
+            : ExtendableContext[Key]
+          : ExtendableContext[Key]
+      : Key extends DeepIncludeKeys
+        ? ExtendableContext[Key] extends {}
+          ? DeepExtendRecord<ExtendableContext[Key], ExtendPayload, void>
+          : ExtendableContext[Key]
+        : ExtendableContext[Key]
   )
 }
+
+export type ExtendModalCreator<ExtendableContext extends AnyModalCreator, ExtendPayload extends {} = {}> = (
+  DeepExtendRecord<ExtendableContext, ExtendPayload> extends AnyModalCreator 
+    ? DeepExtendRecord<ExtendableContext, ExtendPayload>
+    : never
+)
+
+type Test3 = { 
+  events: {
+    callback: (param: PayloadBrand<unknown>) => void
+  }
+}
+
+type Test1 = ExtendModalCreator<
+  Test3 & ModalCreator<string, PayloadBrand<unknown>, {}>,
+  { a: 1 }
+>
+
+type Test2 = Test1 extends AnyModalCreator ? 1 : 2
 
 export type WithApplyPayload<Payload extends PayloadBrand<AnyRecord>> = {
   payload: (payload: ExcludeProperty<Payload, { __internal_name: "payload" }>) => Payload
 }
 
-export type NextFuntionWithMethods<ContextParam extends AnyModalCreatorWithBuilder, ExtendPayload = {}> = {
+export type NextFuntionWithMethods<ContextParam extends AnyModalCreatorWithBuilder, ExtendPayload extends {} = {}> = {
   <
     Context extends AnyRecord = {},
     Payload extends PayloadBrand<AnyRecord> = PayloadBrand<{}>,

@@ -12,6 +12,8 @@ export type Brand<T, N = string> = T & { __internal_name: N }
 
 export type AnyRecord = Record<string, any>
 
+export type UnknownBrand = Brand<unknown, string>
+
 export type RecordsMerge<Old, Add> = Omit<Old, keyof Add> & Add
 
 export type AnyArrowFn = (...args: any[]) => any
