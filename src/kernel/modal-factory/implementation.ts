@@ -1,3 +1,4 @@
+import type { AnyRecord } from "../../shared/types"
 import { BaseStore } from "../store/implementation"
 import type { AnyModalCreatorWithBuilder, Builder, GetPayload, Middleware, ModalCreator, ModalCreatorWithBuilder, ModalStore, NextFuntionWithMethods, PayloadBrand, PayloadUnbrand, WithApplyPayload } from "./interface"
 
@@ -66,7 +67,7 @@ export namespace Modal {
       Context extends
       | AnyModalCreatorWithBuilder
       | FnReturnAnyModalCreatorWithBuilder,
-      ExtendContext = {},
-      ExtendPayload = {},
+      ExtendContext extends {} = {},
+      ExtendPayload extends {} = {},
     > = Middleware<Context, ExtendContext, ExtendPayload>
 }
