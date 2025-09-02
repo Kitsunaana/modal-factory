@@ -2,6 +2,7 @@ import type { ExtendAnyValue } from "../../shared/extend-any-value"
 import type {
   Brand,
   ExcludeProperty,
+  GetParameters,
   RecordsMerge,
   Simplify
 } from "../../shared/types"
@@ -120,37 +121,17 @@ export type Builder<ContextParam extends AnyModalCreator> = {
   ) => ConcatedContext
 }
 
-type R1 = ModalCreator<"test-1", {a: 1}, {b: 2}> & { callback: () => void }
-type R2 = ModalCreator<"test-2", {c: 1}, {d: 2}> & { callback2: (payload: AnyPayloadBrand) => boolean }
+// Middleware<LoginModal, {...}, {...}>
+// Middleware<AbstractModal, {...}, {...}>
+// Params<LoginModal>
+// Params<AbstractModal>
 
-const nextV2 = ({} as NextFuntionWithMethods<R2>)
+export type AnotherModalCreator = ModalCreator<string, AnyObject, AnyObject>
 
-const builder = ({} as Builder<R2>)
-
-builder.use(({ context, next }) => {
-  const modifiedNext = next.extendPayload<{ newValue: string }>()
-  modifiedNext.getContext().open({ c: 1, newValue: "" })
-
-  const result = next({ ctx: {b: 2} }) 
-  
-  return result 
-}).builder.use(({ context, next }) => {
-
-  return next({ ctx: {} })
-})
-
-nextV2.getContext().open({ c: 1 })
-nextV2.extendPayload<{ b: 2 }>().getContext().open({ c: 1, b: 2 })
-
-nextV2.getContext().callback2({ __internal_name: "payload" })
-nextV2.extendPayload<{ b: 2 }>().getContext().callback2({ c: 1, b: 2, __internal_name: "payload" })
-
-const s = nextV2.extendPayload<{ zxc: 1 }>()({
-  ctx: {
-    another: (payload: AnyPayloadBrand) => {
-
-    }
-  }
-})
-
-
+export type Middleware<
+  Context extends AnyModalCreator = AnyModalCreator, 
+  ExtendContext extends AnyObject = AnyObject,
+  ExtendPayload extends AnyObject = AnyObject,
+> = (...params: Parameters<GetParameters<ModalCreatorWithBuilder<Context>["builder"]["use"]>>) => (
+  ExtendModalCreator<Context & ExtendContext, ExtendPayload>
+) 

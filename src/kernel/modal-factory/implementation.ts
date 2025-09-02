@@ -1,76 +1,63 @@
-// import type { AnyRecord, ExcludeProperty } from "../../shared/types"
-// import { BaseStore } from "../store/implementation"
-// import type { AnyModalCreatorWithBuilder, Builder, GetPayload, Middleware, ModalCreator, ModalCreatorWithBuilder, ModalStore, NextFuntionWithMethods, PayloadBrand, PayloadUnbrand, WithApplyPayload } from "./interface"
+import type {
+  AnyModalCreator,
+  AnyNextFunctionWithMethods,
+  AnyObject,
+  Builder,
+  GetPayload,
+  Middleware,
+  ModalCreator,
+  ModalCreatorWithBuilder,
+  PayloadBrand,
+  PayloadUnbrand
+} from "./interface"
 
-// export class Modal<
-//   Type extends string = string, Payload extends PayloadBrand<unknown> = PayloadBrand<unknown>
-// > extends BaseStore<ModalStore<Payload>> implements ModalCreator<Type, PayloadBrand<Payload>> {
-//   public builder: Builder<ModalCreator<Type, PayloadBrand<Payload>> & WithApplyPayload<PayloadBrand<Payload>>> = {
-//     use: (middleware) => {
-//       return {} as any
-//     }
-//   }
+export class Modal<
+  Type extends string = string, 
+  Payload extends AnyObject = AnyObject,
+  Store extends AnyObject = AnyObject
+> {
+  public builder: Builder<ModalCreator<Type, Payload>> = {
+    use: (middleware) => {
+      return {} as any
+    }
+  }
 
-//   constructor(public readonly type: Type) {
-//     super({
-//       isOpen: false,
-//       payload: undefined
-//     })
-//   }
+  constructor(public readonly type: Type) {
+  }
 
-//   public withParams<PayloadV2>() {
-//     return this as unknown as ModalCreatorWithBuilder<
-//       ModalCreator<
-//         Type,
-//         PayloadBrand<PayloadV2>
-//       > & WithApplyPayload<PayloadBrand<PayloadV2>>
-//     >
-//   }
+  public withParams<PayloadV2 extends AnyObject>() {
+    type UpdatedModal = ModalCreator<Type, PayloadV2, Store>
 
-//   public open(payload: 
-//     | PayloadBrand<Payload>
-//     | ExcludeProperty<Payload, { __internal_name: "payload" }>
-//   ) { }
+    return this as unknown as ModalCreatorWithBuilder<UpdatedModal>
+  }
 
-//   public close() { }
+  public open(payload: Payload) { }
 
-//   public payload(payload: PayloadUnbrand<Payload>): Payload {
-//     return {
-//       ...payload,
-//       __internal_name: "payload",
-//     } as unknown as Payload
-//   }
-// }
+  public close() { }
+}
 
-// type FnReturnAnyModalCreatorWithBuilder = (...args: any[]) => AnyModalCreatorWithBuilder
+type FnReturnAnyModalCreatorWithBuilder = (...args: any[]) => AnyModalCreator
 
-// export namespace Modal {
-//   export type payload<Context extends
-//     | AnyModalCreatorWithBuilder
-//     | FnReturnAnyModalCreatorWithBuilder
-//     | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
-//   > = (
-//       Context extends FnReturnAnyModalCreatorWithBuilder
-//         ? PayloadUnbrand<GetPayload<ReturnType<Context>>>
-//           : Context extends
-//             | AnyModalCreatorWithBuilder
-//             | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
-//           ? PayloadUnbrand<GetPayload<Context>>
-//         : never
-//     )
+type AvailableContextUnion = AnyModalCreator | AnyNextFunctionWithMethods | FnReturnAnyModalCreatorWithBuilder
 
-//   export type payloadWithBrand<Context extends
-//     | AnyModalCreatorWithBuilder
-//     | FnReturnAnyModalCreatorWithBuilder
-//     | NextFuntionWithMethods<AnyModalCreatorWithBuilder, any>
-//   > = PayloadBrand<payload<Context>>
+export namespace Modal {
+  export type payload<Context extends AvailableContextUnion
+  > = (
+      Context extends FnReturnAnyModalCreatorWithBuilder
+        ? PayloadUnbrand<GetPayload<ReturnType<Context>>>
+        : Context extends
+          | AnyModalCreator
+          | AnyNextFunctionWithMethods
+            ? PayloadUnbrand<GetPayload<Context>>
+            : never
+    )
 
-//   export type middleware
-//     <
-//       Context extends
-//       | AnyModalCreatorWithBuilder
-//       | FnReturnAnyModalCreatorWithBuilder,
-//       ExtendContext extends {} = {},
-//       ExtendPayload extends {} = { a: 2 },
-//     > = Middleware<Context, ExtendContext, ExtendPayload>
-// }
+  export type payloadWithBrand<Context extends AvailableContextUnion> = PayloadBrand<payload<Context>>
+
+  export type middleware
+    <
+      Context extends AnyModalCreator,
+      ExtendContext extends AnyObject = AnyObject,
+      ExtendPayload extends AnyObject = AnyObject,
+    > = Middleware<Context, ExtendContext, ExtendPayload>
+}
