@@ -19,3 +19,7 @@ export type RecordsMerge<Old, Add> = Omit<Old, keyof Add> & Add
 export type AnyArrowFn = (...args: any[]) => any
 
 export type GetParameters<T extends AnyArrowFn> = Parameters<T>[0]
+
+export type Simplify<T> = { [K in keyof T]: T[K] } & {}
+
+export type SimplifyUnion<T> = T extends any ? T : never

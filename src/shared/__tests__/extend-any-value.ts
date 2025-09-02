@@ -20,7 +20,7 @@ r1.callbackV4(1, {}) // done
 r1.events.callbackV3(({ zxc }) => true) // done
 r1.events.callbackV4(({  }) => true) // done
 r1.events.callbackV5(({ payload: {  } }) => true) // done
-r1.events.callbackV6(({ 
+r1.events.callbackV6(({
   anyArg,
   payload,
   callback,
@@ -32,6 +32,7 @@ r1.events.callbackV6(({
   payload.zxc
 
   callback({
+    __internal_name: "test",
     newValue: "terminator",
     zxc: 1
   })

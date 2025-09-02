@@ -1,6 +1,8 @@
-import type { BaseStoreImpl, Listener, UnknownBaseStore, Updater, UseStoreSelector } from "./interface"
+import type { Simplify } from "../../shared/types"
+import type { AnyModalStore } from "../modal-factory/interface"
+import type { BaseStoreImpl, Listener, Updater, UseStoreSelector } from "./interface"
 
-export class BaseStore<Observable extends UnknownBaseStore> implements BaseStoreImpl<Observable> {
+export class BaseStore<Observable extends AnyModalStore> implements BaseStoreImpl<Observable> {
   _listeners: Set<Listener> = new Set()
 
   constructor(public store: Observable) {}
