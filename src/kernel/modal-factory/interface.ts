@@ -70,12 +70,18 @@ export type GetUniqueContextProperties<Context extends AnyModalCreator> =
 
 export type ModalCreatorWithBuilder<Context extends AnyModalCreator> = Context & { builder: Builder<Context> }
 
-export type ExtendModalCreator<Context extends AnyModalCreator, Payload extends AnyObject = AnyObject> = (
-  Context extends ModalCreator<any, infer IPayload>
+export type ExtendModalCreator<
+  Context extends AnyModalCreator, 
+  Payload extends AnyObject = AnyObject,
+  Store extends AnyObject = AnyObject,
+> = (
+  Context extends ModalCreator<any, infer IPayload, infer IStore>
     ? Simplify<
-        ModalCreator<Context["type"], Simplify<
-          RecordsMerge<IPayload, Payload>
-        >> 
+        ModalCreator<
+          Context["type"], 
+          Simplify<RecordsMerge<IPayload, Payload>>,
+          Simplify<RecordsMerge<IStore, Store>>
+        > 
         & Simplify<
             ExtendAnyValue<
               GetUniqueContextProperties<Context>,
@@ -89,7 +95,10 @@ export type ExtendModalCreator<Context extends AnyModalCreator, Payload extends 
 export type NextFuntionWithMethods<ContextParam extends AnyModalCreator, ExtendPayload extends AnyObject = AnyObject> = {
   getContext: () => ContextParam
   
-  <Context extends AnyObject = AnyObject>(data: { ctx: Context }): (
+  <Context extends AnyObject = AnyObject, Store extends AnyObject = AnyObject>(data: { 
+    ctx: Context
+    store: Store
+  }): (
     ModalCreatorWithBuilder<ExtendModalCreator<ContextParam & Context, ExtendPayload>>
   )
 
@@ -124,11 +133,6 @@ export type Builder<ContextParam extends AnyModalCreator> = {
     }) => ConcatedContext
   ) => ConcatedContext
 }
-
-// Middleware<LoginModal, {...}, {...}>
-// Middleware<AbstractModal, {...}, {...}>
-// Params<LoginModal>
-// Params<AbstractModal>
 
 export type AnotherModalCreator = ModalCreator<string, AnyObject, AnyObject>
 

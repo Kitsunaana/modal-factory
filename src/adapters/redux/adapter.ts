@@ -8,16 +8,16 @@ export class ReduxToModalStoreAdapter<
   Store extends AnyModalStore,
   Type extends string
 > implements BaseStoreImpl<Store> {
-  constructor(private readonly _type: Type, private readonly _redux: ReduxStoreFacade) {
-    this._redux.injectModal(_type)
+  constructor(private readonly _type: Type, private readonly _innerStore: ReduxStoreFacade) {
+    this._innerStore.injectModal(_type)
   }
 
   public get state() {
-    return this._redux.rootStore.getState()[this._type] as Store
+    return this._innerStore.rootStore.getState()[this._type] as Store
   }
 
   public _subscibe(listener: Listener): Unsubscibe {
-    return this._redux.rootStore.subscribe(listener)
+    return this._innerStore.rootStore.subscribe(listener)
   }
 
   public setState(updater: Updater<Store>) {
@@ -25,11 +25,11 @@ export class ReduxToModalStoreAdapter<
       ? updater(this.state) 
       : updater
   
-    const action = this._redux
+    const action = this._innerStore
       .getSlice(this._type).actions
       .update(updatedState)
 
-    this._redux.rootStore.dispatch(action)
+    this._innerStore.rootStore.dispatch(action)
   }
 
   public useStore<T>(selector: (store: Store) => T): T {

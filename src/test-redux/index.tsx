@@ -1,7 +1,9 @@
-import { createReduxStoreAdapter } from "../adapters"
+import { createReduxStoreAdapter, createTanstackStoreAdapter } from "../adapters"
 import type { ModalStore } from "../kernel/modal-factory/interface"
 
-const loginStore = createReduxStoreAdapter<
+const createStore = createTanstackStoreAdapter // createReduxStoreAdapter 
+
+const loginStore = createStore<
   ModalStore<
     { addCount: number }, 
     { counter: { count: number } }
