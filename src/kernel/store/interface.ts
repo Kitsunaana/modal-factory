@@ -13,8 +13,8 @@ export type BaseStoreImpl<Store extends AnyModalStore> = {
 
   _subscibe: (listener: Listener) => () => void
 
-  setState: (updater: Updater<Store>) => void
-  useStore: (selector: UseStoreSelector<Store>) => ReturnType<UseStoreSelector<Store>>
+  setState: (updater: Updater<any>) => void
+  useStore: <T>(selector: (store: Store) => T) => T
 }
 
 export type CreateAdapterFn = <Store extends AnyModalStore, Type extends string>(type: Type) => BaseStoreImpl<Store>

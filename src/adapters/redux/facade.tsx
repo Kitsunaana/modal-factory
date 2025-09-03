@@ -8,7 +8,7 @@ export class ReduxStoreFacade {
   private readonly _reducers: Record<string, Reducer> = {}
 
   private readonly _store = configureStore({
-    reducer: (state) => state
+    reducer: (state = {}) => state
   })
 
   public get ReduxModalProvider() {
@@ -33,7 +33,9 @@ export class ReduxStoreFacade {
         payload: undefined,
       },
       reducers: {
-        update: (_state, { payload }) => payload
+        update: (_state, { payload }) => {
+          Object.assign(_state, payload)
+        }
       }
     }) 
 
@@ -49,3 +51,5 @@ export class ReduxStoreFacade {
 }
 
 export const reduxStoreFacade = new ReduxStoreFacade()
+
+export type RootState<F extends ReduxStoreFacade> = ReturnType<F["rootStore"]["getState"]>;

@@ -4,9 +4,10 @@
  * функции прямо в builder.use с сохранением строгой типизации
  */
 
+import { createReduxStoreAdapter } from "../adapters"
 import { Modal } from "../kernel/modal-factory/implementation"
 
-const kit = new Modal("test")
+const kit = new Modal("test", createReduxStoreAdapter("test"))
   .withParams<{ terminator: "zxc" }>()
 
 type T1 = Modal.payloadWithBrand<typeof kit>

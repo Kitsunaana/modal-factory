@@ -4,11 +4,11 @@
  * предыдущего middleware
  */
 
-import { createReduxStoreAdapter, type CreateAdapterFn } from "../adapters"
+import { createReduxStoreAdapter } from "../adapters"
 import { createEvent, EventEmitter, type Listener } from "../kernel/event-bus/types"
 import { combine, createDirector, Modal } from "../kernel/modal-factory/implementation"
-import type { AnotherModalCreator, AnyModalCreator, AnyObject, ExtendModalCreator, GetUniqueContextProperties, ModalCreator, ModalCreatorWithBuilder } from "../kernel/modal-factory/interface"
-import type { AnyArrowFn, GetParameters, RecordsMerge, Simplify } from "../shared/types"
+import type { AnotherModalCreator } from "../kernel/modal-factory/interface"
+import type { GetParameters } from "../shared/types"
 
 // ---------------------------------------------------------------------------
 /**
@@ -161,5 +161,4 @@ loginV1.event.subscribeHandleOpen(({ payload }) => payload)
 
 const loginV2 = director.allRules("login-v2")
 loginV2.event.subscribeHandleOpen(({ payload }) => payload)
-
 

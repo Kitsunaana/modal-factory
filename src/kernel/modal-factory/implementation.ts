@@ -1,5 +1,5 @@
-import type { CreateAdapterFn } from "../../adapters"
 import type { GetParameters } from "../../shared/types"
+import type { BaseStoreImpl, CreateAdapterFn } from "../store/interface"
 import type {
   AnotherModalCreator,
   AnyModalCreator,
@@ -12,6 +12,7 @@ import type {
   Middleware,
   ModalCreator,
   ModalCreatorWithBuilder,
+  ModalStore,
   PayloadBrand,
   PayloadUnbrand
 } from "./interface"
@@ -27,7 +28,7 @@ export class Modal<
     }
   }
 
-  constructor(public readonly type: Type) {
+  constructor(public readonly type: Type, public readonly store: BaseStoreImpl<ModalStore<Payload, Store>>) {
   }
 
   public withParams<PayloadV2 extends AnyObject>() {
@@ -57,7 +58,7 @@ export const createDirector = <T extends Record<string, readonly Modal.middlewar
   })
 }
 
-export const combine = <M extends Modal.middleware<AnotherModalCreator, any, any>>(middleware: M) => {
+export const combine = <M extends Modal.middleware<AnyModalCreator, any, any>>(middleware: M) => {
   return <Params extends GetParameters<Modal.middleware<AnyModalCreator>>>(params: Params) => {
     return middleware(params) as unknown as M extends Modal.middleware<any, infer Context, infer Payload>
       ? ModalCreatorWithBuilder<ExtendModalCreator<Params["context"] & Context, Payload>>

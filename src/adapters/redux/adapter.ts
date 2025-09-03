@@ -2,8 +2,7 @@ import { useSelector } from "react-redux"
 import type { AnyModalStore } from "../../kernel/modal-factory/interface"
 import type { BaseStoreImpl, CreateAdapterFn, Listener, Unsubscibe, Updater } from "../../kernel/store/interface"
 import { reduxStoreFacade, type ReduxStoreFacade } from "./facade"
-import { isFunction } from "mobx/dist/internal"
-import { merge } from "../../shared/utils"
+import { isFunction, merge } from "../../shared/utils"
 
 export class ReduxToModalStoreAdapter<
   Store extends AnyModalStore,
@@ -22,11 +21,9 @@ export class ReduxToModalStoreAdapter<
   }
 
   public setState(updater: Updater<Store>) {
-    const currentState = this._redux.rootStore.getState()
-
     const updatedState = isFunction(updater) 
-      ? updater(currentState) 
-      : merge(currentState, updater)
+      ? updater(this.state) 
+      : updater
   
     const action = this._redux
       .getSlice(this._type).actions
@@ -36,9 +33,7 @@ export class ReduxToModalStoreAdapter<
   }
 
   public useStore<T>(selector: (store: Store) => T): T {
-    return useSelector.withTypes<Store>()((store) => {
-      return selector(store) as T
-    })
+    return useSelector((root: any) => selector(root[this._type] as Store));
   }
 }
 

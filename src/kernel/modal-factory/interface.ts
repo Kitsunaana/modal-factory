@@ -7,6 +7,7 @@ import type {
   RecordsMerge,
   Simplify
 } from "../../shared/types"
+import type { BaseStoreImpl } from "../store/interface"
 
 export type PayloadBrand<Payload> = Simplify<Brand<Payload, "payload">>
 export type StoreBrand<Store> = Simplify<Brand<Store, "store">>
@@ -50,7 +51,9 @@ export type ModalCreator<
   close: () => void
   open: (payload: Payload) => void
 
-  withParams: <PayloadV2 extends AnyObject>() => ModalCreator<Type, PayloadV2, Store>
+  withParams: <PayloadV2 extends AnyObject>() => ModalCreatorWithBuilder<ModalCreator<Type, PayloadV2, Store>>
+
+  store: BaseStoreImpl<ModalStore<Payload, Store>>
 }>
 
 export type AnyModalCreator = ModalCreator<string, any, any>
