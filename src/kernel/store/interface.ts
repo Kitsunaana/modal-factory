@@ -16,3 +16,5 @@ export type BaseStoreImpl<Store extends AnyModalStore> = {
   setState: (updater: Updater<Store>) => void
   useStore: (selector: UseStoreSelector<Store>) => ReturnType<UseStoreSelector<Store>>
 }
+
+export type CreateAdapterFn = <Store extends AnyModalStore, Type extends string>(type: Type) => BaseStoreImpl<Store>

@@ -1,4 +1,4 @@
-import type { CreateAdapterFn } from "../../adapters/redux"
+import type { CreateAdapterFn } from "../../adapters"
 import type { GetParameters } from "../../shared/types"
 import type {
   AnotherModalCreator,
@@ -70,8 +70,7 @@ type FnReturnAnyModalCreatorWithBuilder = (...args: any[]) => AnyModalCreator
 type AvailableContextUnion = AnyModalCreator | AnyNextFunctionWithMethods | FnReturnAnyModalCreatorWithBuilder
 
 export namespace Modal {
-  export type payload<Context extends AvailableContextUnion
-  > = (
+  export type payload<Context extends AvailableContextUnion> = (
     Context extends FnReturnAnyModalCreatorWithBuilder
       ? PayloadUnbrand<GetPayload<ReturnType<Context>>>
       : Context extends

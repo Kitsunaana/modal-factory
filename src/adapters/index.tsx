@@ -1,0 +1,1 @@
+export { createReduxStoreAdapter } from "./redux/adapter"

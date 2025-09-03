@@ -4,7 +4,7 @@
  * предыдущего middleware
  */
 
-import { createReduxStoreAdapter, type CreateAdapterFn } from "../adapters/redux"
+import { createReduxStoreAdapter, type CreateAdapterFn } from "../adapters"
 import { createEvent, EventEmitter, type Listener } from "../kernel/event-bus/types"
 import { combine, createDirector, Modal } from "../kernel/modal-factory/implementation"
 import type { AnotherModalCreator, AnyModalCreator, AnyObject, ExtendModalCreator, GetUniqueContextProperties, ModalCreator, ModalCreatorWithBuilder } from "../kernel/modal-factory/interface"
