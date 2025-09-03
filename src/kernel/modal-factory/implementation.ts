@@ -1,8 +1,13 @@
+import type { CreateAdapterFn } from "../../adapters/redux"
+import type { GetParameters } from "../../shared/types"
 import type {
+  AnotherModalCreator,
   AnyModalCreator,
   AnyNextFunctionWithMethods,
   AnyObject,
   Builder,
+  DeepExtendModalCreator,
+  ExtendModalCreator,
   GetPayload,
   Middleware,
   ModalCreator,
@@ -36,6 +41,30 @@ export class Modal<
   public close() { }
 }
 
+export const createDirector = <T extends Record<string, readonly Modal.middleware<AnotherModalCreator, any, any>[]>>({
+  variants,
+  createStore,
+}: {
+  variants: T,
+  createStore: CreateAdapterFn
+}) => {
+  return ({} as {
+    [Key in keyof T]: <Type extends string>(type: Type) => (
+      ModalCreatorWithBuilder<
+        DeepExtendModalCreator<Type, T[Key]>
+      >
+    )
+  })
+}
+
+export const combine = <M extends Modal.middleware<AnotherModalCreator, any, any>>(middleware: M) => {
+  return <Params extends GetParameters<Modal.middleware<AnyModalCreator>>>(params: Params) => {
+    return middleware(params) as unknown as M extends Modal.middleware<any, infer Context, infer Payload>
+      ? ModalCreatorWithBuilder<ExtendModalCreator<Params["context"] & Context, Payload>>
+      : never
+  }
+}
+
 type FnReturnAnyModalCreatorWithBuilder = (...args: any[]) => AnyModalCreator
 
 type AvailableContextUnion = AnyModalCreator | AnyNextFunctionWithMethods | FnReturnAnyModalCreatorWithBuilder
@@ -43,13 +72,13 @@ type AvailableContextUnion = AnyModalCreator | AnyNextFunctionWithMethods | FnRe
 export namespace Modal {
   export type payload<Context extends AvailableContextUnion
   > = (
-      Context extends FnReturnAnyModalCreatorWithBuilder
-        ? PayloadUnbrand<GetPayload<ReturnType<Context>>>
-        : Context extends
-          | AnyModalCreator
-          | AnyNextFunctionWithMethods
-            ? PayloadUnbrand<GetPayload<Context>>
-            : never
+    Context extends FnReturnAnyModalCreatorWithBuilder
+      ? PayloadUnbrand<GetPayload<ReturnType<Context>>>
+      : Context extends
+        | AnyModalCreator
+        | AnyNextFunctionWithMethods
+          ? PayloadUnbrand<GetPayload<Context>>
+          : never
     )
 
   export type payloadWithBrand<Context extends AvailableContextUnion> = PayloadBrand<payload<Context>>

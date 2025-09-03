@@ -1,13 +1,15 @@
+import type { AnyModalStore } from "../modal-factory/interface"
+
 export type Listener = () => void
 
-export type UnknownBaseStore = Record<string, unknown>
+export type Unsubscibe = () => void
 
-export type Updater<Store extends UnknownBaseStore> = (store: Store) => Store
+export type Updater<Store extends AnyModalStore> = ((store: Store) => Store) | Partial<Store>
 
-export type UseStoreSelector<Store extends UnknownBaseStore> = <T>(store: Store) => T
+export type UseStoreSelector<Store extends AnyModalStore> = <T>(store: Store) => T
 
-export type BaseStoreImpl<Store extends UnknownBaseStore> = {
-  _listeners: Set<Listener>
+export type BaseStoreImpl<Store extends AnyModalStore> = {
+  get state(): Store
 
   _subscibe: (listener: Listener) => () => void
 

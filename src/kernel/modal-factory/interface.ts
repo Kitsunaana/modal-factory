@@ -1,5 +1,6 @@
 import type { ExtendAnyValue } from "../../shared/extend-any-value"
 import type {
+  AnyArrowFn,
   Brand,
   ExcludeProperty,
   GetParameters,
@@ -134,4 +135,34 @@ export type Middleware<
   ExtendPayload extends AnyObject = AnyObject,
 > = (...params: Parameters<GetParameters<ModalCreatorWithBuilder<Context>["builder"]["use"]>>) => (
   ModalCreatorWithBuilder<ExtendModalCreator<Context & ExtendContext, ExtendPayload>>
-) 
+)
+
+export type IsModalCreator<Value extends unknown> = Value extends AnyModalCreator ? true : false
+
+export type ExcludeBuilder<
+  Context extends 
+    | AnyModalCreator 
+    | ModalCreatorWithBuilder<AnyModalCreator>
+> = Simplify<Omit<Context, "builder">>
+
+export type AbstractFnToMiddleware<Fn extends AnyArrowFn> = IsModalCreator<ReturnType<Fn>> extends true
+  ? ExcludeBuilder<ReturnType<Fn>> extends ModalCreator<any, infer Payload>
+    ? Middleware<AnotherModalCreator, GetUniqueContextProperties<ExcludeBuilder<ReturnType<Fn>>>, Payload>
+    : never
+  : never
+
+export type DeepExtendModalCreator<
+  Type extends string, 
+  Middlewares extends readonly unknown[], 
+  ResultContext extends AnyObject = AnyObject,
+  ResultPayload extends AnyObject = AnyObject,
+> = (
+  Middlewares extends readonly [infer First extends AnyArrowFn, ...infer Rest]
+    ? AbstractFnToMiddleware<First> extends Middleware<any, infer Context, infer Payload>
+      ? DeepExtendModalCreator<Type, Rest, RecordsMerge<ResultContext, Context>, RecordsMerge<ResultPayload, Payload>>
+      : DeepExtendModalCreator<Type, Rest, ResultContext, ResultPayload>
+    : ExtendModalCreator<
+        ModalCreator<Type> & ResultContext,
+        ResultPayload
+      >
+)
