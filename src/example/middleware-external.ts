@@ -1,248 +1,267 @@
-// import { createEvent, EventEmitter, type Listener } from "../kernel/event-bus/types"
-// import { Modal } from "../kernel/modal-factory/implementation"
-// import type { AnotherModalCreator, AnyModalCreator, AnyModalCreatorWithBuilder, BuildModalCreator, BuildModalCreatorWithoutBuilder, DeepMergePayloads, FindAllDifferentProperties, Middleware, ModalCreator, PayloadBrand, PayloadUnbrand } from "../kernel/modal-factory/interface"
-// import type { ExtendAnyValue } from "../shared/extend-any-value"
-// import type { AnyRecord, GetParameters, RecordsMerge } from "../shared/types"
+// --------------------------------- EXAMPLE ---------------------------------
+/**
+ * Возможность вынести middleware в отдельные функции с сохранением результата
+ * предыдущего middleware
+ */
+
+import { createEvent, EventEmitter, type Listener } from "../kernel/event-bus/types"
+import { Modal } from "../kernel/modal-factory/implementation"
+import type { AnotherModalCreator, AnyModalCreator, AnyObject, ExtendModalCreator, GetUniqueContextProperties, ModalCreator, ModalCreatorWithBuilder } from "../kernel/modal-factory/interface"
+import type { AnyArrowFn, GetParameters, RecordsMerge, Simplify } from "../shared/types"
+
+// ---------------------------------------------------------------------------
+/**
+ * 
+ * 
+ *         ( *^-^)ρ(*╯^╰)         .·´¯`(>▂<)´¯`·.          /(ㄒoㄒ)/~~
+ * 
+ * 
+ */
+// ---------------------------------------------------------------------------
+type ExtendContext = { abc: string }
+type ExtendPayload = { zxc: string }
+
+/**
+ * Абстрактный, не зависит от других мидлваров, заранее указываем контекст и 
+ * payload которыми расширяем базовый общий контекст 
+ */
+const testV4: Modal.middleware<AnotherModalCreator, ExtendContext, ExtendPayload> = ({ context, next }) => {
+  const modifiedNext = next.extendPayload<ExtendPayload>()
+
+  const result = modifiedNext({
+    ctx: {
+      abc: "s"
+    } as const
+  })
+
+  result.abc === "s"
+  modifiedNext.getContext().open({
+    zxc: ""
+  })
+
+  return result
+}
+
+testV4({} as any)
+// ---------------------------------------------------------------------------
+/**
+ * 
+ * 
+ *         ( *^-^)ρ(*╯^╰)         .·´¯`(>▂<)´¯`·.          /(ㄒoㄒ)/~~
+ * 
+ * 
+ */
+// ---------------------------------------------------------------------------
+type ExtendPayloadV2 = { data: { a: { b: "terminator" } } }
+
+type ExtendContextV2 = { 
+  anotherCallback: (data: Modal.payloadWithBrand<ReturnType<typeof testV4>>) => void 
+}
+
+const testV5: Modal.middleware<AnotherModalCreator, ExtendContextV2, ExtendPayloadV2> = ({ next }) => {
+  const modifiedNext = next.extendPayload<ExtendPayloadV2>()
+
+  return modifiedNext({
+    ctx: {
+      anotherCallback(data) {
+        data.zxc
+
+        modifiedNext
+          .getContext()
+          .open({ 
+            data: { 
+              a: { 
+                b: "terminator"
+              }
+            }
+          })
+
+        return data.zxc
+      },
+    } satisfies ExtendContextV2
+  })
+}
+
+type V1 = ExtendPayloadV2 extends AnyObject ? 1 : 2
+type V2 = ExtendContextV2 extends AnyObject ? 1 : 2
 
 
-// // --------------------------------- EXAMPLE ---------------------------------
-// /**
-//  * Возможность вынести middleware в отдельные функции с сохранением результата
-//  * предыдущего middleware
-//  */
+// ---------------------------------------------------------------------------
+/**
+ * 
+ * 
+ *         ( *^-^)ρ(*╯^╰)         .·´¯`(>▂<)´¯`·.          /(ㄒoㄒ)/~~
+ * 
+ * 
+ */
+// ---------------------------------------------------------------------------
+const sharedEventBus = new EventEmitter()
 
-// // ---------------------------------------------------------------------------
-// /**
-//  * 
-//  * 
-//  *         ( *^-^)ρ(*╯^╰)         .·´¯`(>▂<)´¯`·.          /(ㄒoㄒ)/~~
-//  * 
-//  * 
-//  */
-// // ---------------------------------------------------------------------------
-// type ExtendContext = { abc: string }
-// type ExtendPayload = { zxc: string }
+const addEventMiddleware = ({ context, next }: GetParameters<Modal.middleware<AnotherModalCreator>>) => {
+  const openEventName = `modal.open.${context.type}` as const
+  const closeEventName = `modal.close.${context.type}` as const
 
-// /**
-//  * Абстрактный, не зависит от других мидлваров, заранее указываем контекст и 
-//  * payload которыми расширяем базовый общий контекст 
-//  */
-// const testV4: Modal.middleware<AnotherModalCreator, ExtendContext, ExtendPayload> = ({ context, next }) => {
-//   const modifiedNext = next.extendPayload<ExtendPayload>()
+  const openModalEvent = createEvent(openEventName)
+    .withParams<Modal.payloadWithBrand<typeof context>>()
 
-//   modifiedNext.getContext().payload({ zxc: "" })
+  const closeModalEvent = createEvent(closeEventName)
 
-//   const result = modifiedNext({
-//     ctx: {
-//       abc: "s"
-//     }
-//   })
+  const handleOpen = (payload: Modal.payloadWithBrand<typeof context>) => {
+    sharedEventBus.emit(openModalEvent(payload))
+    context.open(payload)
+  }
 
-//   return result
-// }
+  const handleClose = () => {
+    sharedEventBus.emit(closeModalEvent({}))
+    context.close()
+  }
 
-// testV4({} as any)      
-// // ---------------------------------------------------------------------------
-// /**
-//  * 
-//  * 
-//  *         ( *^-^)ρ(*╯^╰)         .·´¯`(>▂<)´¯`·.          /(ㄒoㄒ)/~~
-//  * 
-//  * 
-//  */
-// // ---------------------------------------------------------------------------
-// type ExtendPayloadV2 = { data: { a: { b: "terminator" } } }
+  const subscribeHandleOpen = <
+    Event extends Listener<typeof openEventName, Modal.payloadWithBrand<typeof context>>
+  >(callback: Event) => {
+    sharedEventBus.on(openModalEvent, callback)
+  }
 
-// type ExtendContextV2 = { 
-//   anotherCallback: (data: Modal.payloadWithBrand<ReturnType<typeof testV4>>) => void 
-// }
+  const subscribeHandleClose = <Event extends Listener<typeof closeEventName>>(callback: Event) => {
+    sharedEventBus.on(closeModalEvent, callback)
+  }
 
-// const testV5: Modal.middleware<AnotherModalCreator, ExtendContextV2, ExtendPayloadV2> = ({ next }) => {
-//   const modifiedNext = next.extendPayload<ExtendPayloadV2>()
+  const updatedContext = {
+    zxc: 1,
+    event: {
+      openModalEvent,
+      closeModalEvent,
 
-//   return modifiedNext({
-//     ctx: {
-//       anotherCallback(data) {
-//         data.zxc
+      handleOpen,
+      handleClose,
 
-//         modifiedNext
-//           .getContext()
-//           .payload({ 
-//             data: { 
-//               a: { 
-//                 b: "terminator"
-//               }
-//             }
-//           })
+      subscribeHandleOpen,
+      subscribeHandleClose,
+    },
+  }
 
-//         return data.zxc
-//       },
-//     } satisfies ExtendContextV2
-//   })
-// }
-// // ---------------------------------------------------------------------------
-// /**
-//  * 
-//  * 
-//  *         ( *^-^)ρ(*╯^╰)         .·´¯`(>▂<)´¯`·.          /(ㄒoㄒ)/~~
-//  * 
-//  * 
-//  */
-// // ---------------------------------------------------------------------------
-// const sharedEventBus = new EventEmitter()
+  const result = next({ 
+    ctx: updatedContext
+  })
 
-// const addEventMiddleware = ({ context, next }: GetParameters<Modal.middleware<AnotherModalCreator, { a: 1 }>>) => {
-//   const openEventName = `modal.open.${context.type}` as const
-//   const closeEventName = `modal.close.${context.type}` as const
+  return result
+}
+type G0 = typeof addEventMiddleware
+type G2 = typeof testV5
 
-//   const openModalEvent = createEvent(openEventName)
-//     .withParams<Modal.payloadWithBrand<typeof context>>()
+type IsModalCreator<Value extends unknown> = Value extends AnyModalCreator ? true : false
 
-//   const closeModalEvent = createEvent(closeEventName)
+type ExcludeBuilder<Context extends AnyModalCreator | ModalCreatorWithBuilder<AnyModalCreator>> = Simplify<Omit<Context, "builder">>
 
-//   const handleOpen = (payload: Modal.payloadWithBrand<typeof context>) => {
-//     sharedEventBus.emit(openModalEvent(payload))
-//     context.open(payload)
-//   }
+type X1 = ExcludeBuilder<ReturnType<G0>>
 
-//   const handleClose = () => {
-//     sharedEventBus.emit(closeModalEvent({}))
-//     context.close()
-//   }
+type AbstractFnToMiddleware<Fn extends AnyArrowFn> = IsModalCreator<ReturnType<Fn>> extends true
+  ? ExcludeBuilder<ReturnType<Fn>> extends ModalCreator<any, infer Payload>
+    ? Modal.middleware<AnotherModalCreator, GetUniqueContextProperties<ExcludeBuilder<ReturnType<Fn>>>, Payload>
+    : never
+  : never
 
-//   const subscribeHandleOpen = <
-//     Event extends Listener<typeof openEventName, Modal.payloadWithBrand<typeof context>>
-//   >(callback: Event) => {
-//     sharedEventBus.on(openModalEvent, callback)
-//   }
+type CalculatePayloadFromMiddleware<Middleware extends AnyArrowFn> = (
+  Middleware extends Modal.middleware<any, infer Payload, any>
+    ? Payload
+    : CalculatePayloadFromMiddleware<AbstractFnToMiddleware<Middleware>>
+) 
 
-//   const subscribeHandleClose = <Event extends Listener<typeof closeEventName>>(callback: Event) => {
-//     sharedEventBus.on(closeModalEvent, callback)
-//   }
+type G1 = CalculatePayloadFromMiddleware<G0>
+type G3 = CalculatePayloadFromMiddleware<G2>
 
-//   const updatedContext = {
-//     zxc: 1,
-//     event: {
-//       openModalEvent,
-//       closeModalEvent,
+addEventMiddleware({} as any).event.subscribeHandleOpen(({ payload }) => {
+  payload
+})
 
-//       handleOpen,
-//       handleClose,
+const to = (params: GetParameters<Modal.middleware<AnyModalCreator>>) => {
+  return <M extends Modal.middleware<AnyModalCreator, AnyObject, any>>(middleware: M) => {
+    return middleware(params) as unknown as M extends Modal.middleware<any, infer Context, infer Payload>
+      ? Context
+      : 2
+  }
+}
 
-//       subscribeHandleOpen,
-//       subscribeHandleClose,
-//     },
-//   }
+const loginModal = new Modal("login")
+  .builder.use(({ context, next }) => {
+    const result = testV4({ context, next })
+    return result    
+  })
+  .builder.use(({ context, next }) => {
+    const t = to({ context, next })(testV5)
+    
+ 
+    return t
+  })
 
-//   const result = next({
-//     ctx: updatedContext
-//   })
+loginModal
+loginModal.open({
+  
+})
 
-//   return result
-// }
+type AnyMiddleware = Modal.middleware<AnyModalCreator, any, any>
 
-// addEventMiddleware({} as any).event.subscribeHandleOpen(({ payload }) => {
-//   payload
-// })
+type DeepExtendModalCreator<
+  Type extends string, 
+  Middlewares extends readonly unknown[], 
+  ResultContext extends AnyObject = AnyObject,
+  ResultPayload extends AnyObject = AnyObject,
+> = (
+  Middlewares extends readonly [infer First extends AnyArrowFn, ...infer Rest]
+    ? AbstractFnToMiddleware<First> extends Modal.middleware<any, infer Context, infer Payload>
+      ? DeepExtendModalCreator<Type, Rest, RecordsMerge<ResultContext, Context>, RecordsMerge<ResultPayload, Payload>>
+      : DeepExtendModalCreator<Type, Rest, ResultContext, ResultPayload>
+    : ExtendModalCreator<
+        ModalCreator<Type> & ResultContext,
+        ResultPayload
+      >
+)
+
+const m = [testV4, testV5, addEventMiddleware] as const
+
+type T1 = Simplify<DeepExtendModalCreator<"login", typeof m>>
+
+const t1 = ({} as T1)
+
+t1.event.subscribeHandleOpen(({ payload }) => {
+
+})
+
+const createDirector = <T extends Record<string, readonly Modal.middleware<AnotherModalCreator, any, any>[]>>({ variants }: {
+  variants: T
+}) => {
+  return ({} as {
+    [Key in keyof T]: <Type extends string>(type: Type) => (
+      ModalCreatorWithBuilder<
+        DeepExtendModalCreator<Type, T[Key]>
+      >
+    )
+  })
+}
+
+const combine = <M extends Modal.middleware<AnotherModalCreator, any, any>>(middleware: M) => {
+  return <Params extends GetParameters<Modal.middleware<AnyModalCreator>>>(params: Params) => {
+    return middleware(params) as unknown as M extends Modal.middleware<any, infer Context, infer Payload>
+      ? ModalCreatorWithBuilder<ExtendModalCreator<Params["context"] & Context, Payload>>
+      : never
+  }
+}
+
+const director = createDirector({
+  variants: {
+    base: [],
+    events: [addEventMiddleware],
+    allRules: [testV4, testV5, addEventMiddleware],
+  } as const
+})
+
+const loginV1 = director.events("login-v1")
+  .builder.use(combine(testV4))
+  .builder.use(combine(testV5))
+
+loginV1.event.subscribeHandleOpen(({ payload }) => payload)
+
+const loginV2 = director.allRules("login-v2")
+loginV2.event.subscribeHandleOpen(({ payload }) => payload)
 
 
-// const middlewares = [testV4, testV5, addEventMiddleware] as const
-
-// type AnyMiddleware = Middleware<AnyModalCreatorWithBuilder, any, any>
-
-// type GetPayloadFromMiddleware<Fn extends AnyMiddleware> = 
-//   Fn extends Middleware<any, any, infer Payload>
-//     ? Payload
-//     : never
-
-// type GetAddedContextFromMiddleware<Fn extends AnyMiddleware> = 
-//   Fn extends Middleware<any, infer AddedContext, any>
-//     ? {} extends AddedContext
-//       ? FindAllDifferentProperties<AnotherModalCreator, ReturnType<Fn>>
-//       : AddedContext
-//     : never
-
-// type GetAllAddedContext<Middlewares extends readonly AnyMiddleware[], Result extends AnyRecord[] = []> = 
-//   Middlewares extends readonly [infer First extends AnyMiddleware, ...infer Rest extends readonly AnyMiddleware[]]
-//     ? GetAllAddedContext<
-//         Rest,
-//         [...Result, GetAddedContextFromMiddleware<First>]
-//       >
-//     : Result
-
-// type GetAllPayload<Middlewares extends readonly AnyMiddleware[], Result extends AnyRecord[] = []> = 
-//   Middlewares extends readonly [infer First extends AnyMiddleware, ...infer Rest extends readonly AnyMiddleware[]]
-//     ? GetAllPayload<
-//         Rest,
-//         [...Result, GetPayloadFromMiddleware<First>]
-//       >
-//     : Result
-
-// type DeepMergeRecords<T extends readonly {}[], R extends {} = {}> = 
-//   T extends readonly [infer First extends {}, ...infer Rest extends readonly {}[]]
-//     ? DeepMergeRecords<Rest, RecordsMerge<R, First>>
-//     : R
-
-// type R1 = GetAllAddedContext<typeof middlewares>
-// type R3 = GetAllPayload<typeof middlewares>
-
-// type FilterEmptyRecords<T extends readonly {}[], R extends readonly {}[] = []> = 
-//   T extends readonly [infer First extends {}, ...infer Rest extends readonly {}[]]
-//     ? {} extends PayloadUnbrand<First>
-//       ? FilterEmptyRecords<Rest, R>
-//       : FilterEmptyRecords<Rest, [...R, First]>
-//     : R
-
-// export type Simplify<T> = { [K in keyof T]: T[K] } & {}
-
-// type E1 = FilterEmptyRecords<R3>["2"]
-
-// type G1 = ModalCreator<"test-v1", PayloadBrand<{ age: number }>> & DeepMergeRecords<R1>
-// type G2 = ModalCreator<"test-v2", PayloadBrand<{ age: number }>>
-
-// // type G7 = FindAllDifferentProperties<AnotherModalCreator, ReturnType<typeof addEventMiddleware>>
-// type G7 = GetAddedContextFromMiddleware<typeof addEventMiddleware>
-
-// type R4 = BuildModalCreatorWithoutBuilder<
-//   [G1],
-//   R3
-// >
-
-// type E2 = Simplify<DeepMergePayloads<R3>>
-
-// type J1 = R3[2]
-
-// type R6 = DeepMergePayloads<R3>
-
-// const r4 = ({} as R4)
-
-// type FilterUnion<T extends {}> = T extends PayloadBrand<unknown> ? T : never
-
-// r4.event.subscribeHandleOpen(({ payload }) => {
-//   type G1 = Simplify<typeof payload>
-//   type G2 = FilterUnion<Simplify<typeof payload>>
-
-//   type G3 = ExtendAnyValue<
-//     DeepMergePayloads<GetAllPayload<typeof middlewares>>,
-//     {}
-//   >
-
-//   const p2 = ({} as G1)
-//   // payload
-// })
-
-// r4.anotherCallback({
-//   __internal_name: "payload",
-//   zxc: "1",
-//   data: {
-//     a: {
-//       b: "terminator"
-//     }
-//   }
-// })
-
-// // r4.
-
-// type R2 = typeof testV5 extends AnyMiddleware 
-//   ? [GetAddedContextFromMiddleware<typeof testV5>, GetPayloadFromMiddleware<typeof testV5>]
-//   : 2

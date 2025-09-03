@@ -133,5 +133,5 @@ export type Middleware<
   ExtendContext extends AnyObject = AnyObject,
   ExtendPayload extends AnyObject = AnyObject,
 > = (...params: Parameters<GetParameters<ModalCreatorWithBuilder<Context>["builder"]["use"]>>) => (
-  ExtendModalCreator<Context & ExtendContext, ExtendPayload>
+  ModalCreatorWithBuilder<ExtendModalCreator<Context & ExtendContext, ExtendPayload>>
 ) 
