@@ -51,9 +51,10 @@ export type ModalCreator<
   close: () => void
   open: (payload: Payload) => void
 
-  withParams: <PayloadV2 extends AnyObject>() => ModalCreatorWithBuilder<ModalCreator<Type, PayloadV2, Store>>
-
   store: BaseStoreImpl<ModalStore<Payload, Store>>
+
+  usePayload: <IsOpen extends boolean>(isOpen?: IsOpen) => IsOpen extends true ? Payload : undefined
+  useIsOpen: () => boolean
 }>
 
 export type AnyModalCreator = ModalCreator<string, any, any>
@@ -96,10 +97,16 @@ export type NextFuntionWithMethods<ContextParam extends AnyModalCreator, ExtendP
   getContext: () => ContextParam
   
   <Context extends AnyObject = AnyObject, Store extends AnyObject = AnyObject>(data: { 
-    ctx: Context
-    store: Store
+    ctx?: Context
+    store?: Store
   }): (
-    ModalCreatorWithBuilder<ExtendModalCreator<ContextParam & Context, ExtendPayload>>
+    ModalCreatorWithBuilder<
+      ExtendModalCreator<
+        ContextParam & Context, 
+        ExtendPayload,
+        Store
+      >
+    >
   )
 
   extendPayload: <Payload2 extends AnyObject>() => (

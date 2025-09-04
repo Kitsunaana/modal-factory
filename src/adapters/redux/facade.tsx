@@ -51,5 +51,3 @@ export class ReduxStoreFacade {
 }
 
 export const reduxStoreFacade = new ReduxStoreFacade()
-
-export type RootState<F extends ReduxStoreFacade> = ReturnType<F["rootStore"]["getState"]>;

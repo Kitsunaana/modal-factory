@@ -1,40 +1,26 @@
-import { createReduxStoreAdapter, createTanstackStoreAdapter } from "../adapters"
-import type { ModalStore } from "../kernel/modal-factory/interface"
+import { createTanstackStoreAdapter } from "../adapters"
+import { createDirector } from "../kernel/modal-factory/implementation"
 
-const createStore = createTanstackStoreAdapter // createReduxStoreAdapter 
-
-const loginStore = createStore<
-  ModalStore<
-    { addCount: number }, 
-    { counter: { count: number } }
-  >, 
-  "login"
->("login")
-
-loginStore.setState({
-  counter: {
-    count: 10
-  }
+const director = createDirector({
+  createStore: createTanstackStoreAdapter,
+  variants: {
+    base: []
+  } as const
 })
 
-export function TestReduxAdapter() {
-  const isOpen = loginStore.useStore(store => store.isOpen)
-  const count = loginStore.useStore(store => store.counter.count)
+const loginModal = director
+  .base("loginV2")
+  .withParams<{ anyValue: "terminator" }>()
 
-  const handleAddToCount = () => {
-    loginStore.setState({
-      counter: {
-        count: count + Math.random()
-      }
-    })
-  }
+export function TestReduxAdapter() {
+  const isOpen = loginModal.useIsOpen()
+  const payload = loginModal.usePayload()
 
   return (
     <div>
-      <button onClick={handleAddToCount}>Добавить</button>
-      <p>{count}</p>
+      <p>{payload?.anyValue}</p>
 
-      <button onClick={() => loginStore.setState({ isOpen: !isOpen })}>Переключить</button>
+      <button onClick={() => loginModal.open({ anyValue: "terminator" })}>Переключить</button>
       <p>{isOpen ? "Открыто" : "Закрыто"}</p>
     </div>
   )

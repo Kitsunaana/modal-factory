@@ -1,8 +1,8 @@
 import { useSelector } from "react-redux"
 import type { AnyModalStore } from "../../kernel/modal-factory/interface"
 import type { BaseStoreImpl, CreateAdapterFn, Listener, Unsubscibe, Updater } from "../../kernel/store/interface"
+import { isFunction } from "../../shared/utils"
 import { reduxStoreFacade, type ReduxStoreFacade } from "./facade"
-import { isFunction, merge } from "../../shared/utils"
 
 export class ReduxToModalStoreAdapter<
   Store extends AnyModalStore,

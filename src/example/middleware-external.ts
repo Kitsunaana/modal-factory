@@ -144,14 +144,23 @@ const addEventMiddleware = ({ context, next }: GetParameters<Modal.middleware<An
   return result
 }
 
+const testV6: Modal.middleware<ReturnType<typeof testV5>> = ({ context, next }) => {
+  const result = next({ ctx: {} })
+
+  return result
+}
+
 const director = createDirector({
   createStore: createReduxStoreAdapter,
   variants: {
     base: [],
     events: [addEventMiddleware],
     allRules: [testV4, testV5, addEventMiddleware],
+    two: [addEventMiddleware, testV6]
   } as const
 })
+
+director.two("ads")
 
 const loginV1 = director.events("login-v1")
   .builder.use(combine(testV4))
@@ -162,3 +171,5 @@ loginV1.event.subscribeHandleOpen(({ payload }) => payload)
 const loginV2 = director.allRules("login-v2")
 loginV2.event.subscribeHandleOpen(({ payload }) => payload)
 
+const reg = new Modal("reg", {} as any).withParams<{ abc: string }>()
+const regv2 = new Modal("regv2", {} as any).withParams<{ abc: string }>()
