@@ -15,7 +15,7 @@ export type ExtendEveryPropertyRecord<Object extends AnyRecord, Extend extends A
 }>
 
 export type ExtendEveryFunctionParams<Function extends AnyArrowFn, Extend extends AnyRecord = {}> = (
-  (...args: ExtendEveryTupleValue<Parameters<Function>, Extend>) => ReturnType<Function>
+  (...args: ExtendEveryTupleValue<Parameters<Function>, Extend>) => ExtendAnyValue<ReturnType<Function>, Extend>
 )
 
 export type ExtendValue<Value extends UnknownBrand, Extend extends AnyRecord = {}> = Simplify<Value & Extend>
@@ -24,7 +24,7 @@ export type ExtendAnyValue<Value extends unknown, Extend extends AnyRecord = {}>
   Value extends UnknownBrand
     ? ExtendValue<Value, Extend>
     : Value extends AnyArrowFn
-      ? (...args: ExtendEveryTupleValue<Parameters<Value>, Extend>) => ReturnType<Value>
+      ? ExtendEveryFunctionParams<Value, Extend>
       : Value extends AnyRecord
         ? ExtendEveryPropertyRecord<Value, Extend>
         : Value extends unknown[]

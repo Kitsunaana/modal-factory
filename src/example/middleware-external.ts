@@ -160,13 +160,11 @@ const director = createDirector({
   } as const
 })
 
-director.two("ads")
-
 const loginV1 = director.events("login-v1")
   .builder.use(combine(testV4))
   .builder.use(combine(testV5))
-  
-loginV1.event.subscribeHandleOpen(({ payload }) => payload)
+
+loginV1.event.subscribeHandleOpen(({ payload }) => payload.data.a.b === "terminator")
 
 const loginV2 = director.allRules("login-v2")
 loginV2.event.subscribeHandleOpen(({ payload }) => payload)
