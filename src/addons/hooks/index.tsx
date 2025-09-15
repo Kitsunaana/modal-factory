@@ -87,14 +87,12 @@ export const addContextStoreMiddleware = ({ context, next }: Modal.params) => {
     )
   }
 
-  const result = next({
+  return next({
     ctx: {
       ModalStoreProvider,
       useModalStore,
     }
   })
-
-  return result
 }
 
 const testDirector = createDirector({

@@ -1,5 +1,7 @@
+import { createContext, useContext, useMemo, useRef, useState, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react"
 import { createTanstackStoreAdapter } from "../adapters"
 import { addContextStoreMiddleware, addLocalStateMiddleware } from "../addons/hooks"
+import { UiModal } from "../hz/ui/modal"
 import { createDirector } from "../kernel/modal-factory/implementation"
 
 const director = createDirector({
@@ -20,6 +22,8 @@ const newModalV2 = director.hooks("newModalV2").withParams<{ value: number }>()
 export function TestNewModal() {
   const { isOpen, payload, onClose, onOpen } = newModalV2.useModalStore()
   
+  newModalV2.open({ value: 123 })
+
   return (
     <div>
       {String(isOpen)}
@@ -32,40 +36,100 @@ export function TestNewModal() {
   )
 }
 
+type SidebarContextProps = {
+  isExpanded: boolean
+  nodeRef: RefObject<HTMLDivElement | null>
+  onCollapse: () => void
+  onExpand: () => void
+}
 
-export function TestReduxAdapter() {
-  const isOpen = loginModal.useIsOpen()
-  const payload = loginModal.usePayload()
+const SidebarContext = createContext<SidebarContextProps | null>(null)
 
-  console.log(newModal)
-  const newModalState = newModal.useLocalModalState()
+export const useSidebarContext = () => {
+  const context = useContext(SidebarContext)
+  if (context === null) throw new Error("Context is not implemented")
+  return context
+}
+
+export const SidebarProvider = ({ children }: { children: ReactNode }) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  const onExpand = () => setIsExpanded(true)
+  const onCollapse = () => setIsExpanded(false)
+
+  const nodeRef = useRef<HTMLDivElement | null>(null)
+
+
+  const sidebarContextValue = useMemo(
+    () => ({
+      nodeRef,
+      onExpand,
+      onCollapse,
+      isExpanded,
+    }),
+    [isExpanded]
+  )
 
   return (
-    <div>
-      <newModalV2.ModalStoreProvider>
-        <TestNewModal />
-      </newModalV2.ModalStoreProvider>
+    <SidebarContext value={sidebarContextValue}>
+      {children}
+    </SidebarContext>
+  )
+}
 
-      <p>{payload?.anyValue}</p>
+export function TestReduxAdapter() {
+  const newModalState = newModal.useLocalModalState()
 
-      <button onClick={() => loginModal.open({ anyValue: "terminator" })}>Переключить</button>
-      <p>{isOpen ? "Открыто" : "Закрыто"}</p>
+  const { nodeRef, isExpanded, onExpand, onCollapse } = useSidebarContext()
 
-      <div>
-        <h1>Новая модалка</h1>
-        <h4>Значение: {newModalState.payload?.value}</h4>
-        <h5>Состояние: {String(newModalState.isOpen)}</h5>
+  return (
+    <div style={{ height: "100vh" }}>
+      
+      <UiModal
+        isOpen={newModalState.isOpen}
+        onClose={newModalState.onClose}
+      />
+
+      <button
+        onClick={onExpand}
+        style={{
+          height: "40px",
+          width: "40px",
+        }}
+      />
+
+      <div
+        ref={nodeRef}
+        style={{
+          width: "200px",
+          height: "100%",
+          backgroundColor: "blue",
+          position: "absolute",
+          top: "0px",
+          transition: "all .3s",
+          left: isExpanded ? "0px" : "-200px"
+        }}
+      >
+        <button
+          onClick={onCollapse}
+          style={{
+            height: "40px",
+            width: "40px",
+          }}
+        />
 
         <button
-          onClick={() => newModalState.onOpen({ __internal_name: "payload", value: 123 })}
+          onClick={() => {
+            onCollapse()
+            
+            newModalState.onOpen({ __internal_name: "payload", value: 2314 })
+          }}
+          style={{
+            width: "100%",
+            height: "40px"
+          }}
         >
-          Открыть
-        </button>
-
-        <button
-          onClick={newModalState.onClose}
-        >
-          Закрыть
+          Профиль
         </button>
       </div>
     </div>

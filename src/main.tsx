@@ -1,9 +1,12 @@
 import ReactDOM from "react-dom/client";
 import { reduxStoreFacade } from "./adapters";
-import { TestReduxAdapter } from "./test-redux";
+import { SidebarProvider, TestReduxAdapter } from "./test-redux";
+import "./index.css"
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <reduxStoreFacade.ReduxModalProvider>
-    <TestReduxAdapter />
+    <SidebarProvider>
+      <TestReduxAdapter />
+    </SidebarProvider>
   </reduxStoreFacade.ReduxModalProvider>
 );

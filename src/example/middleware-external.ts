@@ -154,17 +154,17 @@ const director = createDirector({
   createStore: createReduxStoreAdapter,
   variants: {
     base: [],
-    events: [addEventMiddleware],
+    events: [addEventMiddleware, testV5],
     allRules: [testV4, testV5, addEventMiddleware],
     two: [addEventMiddleware, testV6]
   } as const
 })
 
-const loginV1 = director.events("login-v1")
+const loginV1 = director.events("login-v1").withParams<{a:1}>()
   .builder.use(combine(testV4))
-  .builder.use(combine(testV5))
+  // .builder.use(combine(testV5))
 
-loginV1.event.subscribeHandleOpen(({ payload }) => payload.data.a.b === "terminator")
+loginV1.event.subscribeHandleOpen(({ payload }) => payload)
 
 const loginV2 = director.allRules("login-v2")
 loginV2.event.subscribeHandleOpen(({ payload }) => payload)
