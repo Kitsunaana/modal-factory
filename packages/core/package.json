@@ -1,0 +1,32 @@
+{
+  "name": "@modal-factory/core",
+  "version": "0.1.0",
+  "main": "dist/core.cjs",
+  "module": "dist/core.es.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/core.es.js",
+      "require": "./dist/core.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test:types": "tsc --noEmit --project tsconfig.json",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "test": "tsc -p tsconfig.test.json --noEmit && vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.13",
+    "@vitest/ui": "latest",
+    "typescript": "^5.9.2",
+    "vite": "latest",
+    "vitest": "latest"
+  }
+}

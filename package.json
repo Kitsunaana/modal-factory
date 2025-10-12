@@ -1,32 +1,13 @@
 {
-  "name": "react-utils-v2",
+  "name": "modal-factory",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "packages/adapters/*",
+    "example"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "test": "vitest",
-    "test:types": "tsc --noEmit --project tsconfig.json"
-  },
-  "devDependencies": {
-    "@types/node": "^20.19.11",
-    "@types/react": "^19.1.12",
-    "@types/react-dom": "^19.1.9",
-    "@vitejs/plugin-react": "^5.0.2",
-    "@vitest/ui": "latest",
-    "typescript": "^5.9.2",
-    "vite": "latest",
-    "vitest": "latest"
-  },
-  "dependencies": {
-    "@reduxjs/toolkit": "^2.8.2",
-    "@tanstack/react-store": "^0.7.4",
-    "@types/react-transition-group": "^4.4.12",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-redux": "^9.2.0",
-    "react-transition-group": "^4.4.5"
+    "build": "npm run build --workspace=@modal-factory/core && npm run build --workspace=@modal-factory/adapters-redux && npm run build --workspace=@modal-factory/adapters-tanstack-store",
+    "dev": "npm run dev --workspace=examplev2"
   }
 }

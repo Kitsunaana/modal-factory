@@ -1,0 +1,25 @@
+{
+  "name": "@modal-factory/adapters-redux",
+  "version": "0.1.0",
+  "main": "dist/redux.cjs",
+  "module": "dist/redux.es.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/redux.es.js",
+      "require": "./dist/redux.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@modal-factory/core": "file:../../core",
+    "@reduxjs/toolkit": "^2.9.0",
+    "react-redux": "^9.2.0"
+  }
+}
